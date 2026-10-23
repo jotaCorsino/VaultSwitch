@@ -1,0 +1,413 @@
+"use strict";
+
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const test = require("node:test");
+
+const {
+  DEFAULT_MAX_BYTES,
+  parseKasperskyTxtBytes,
+} = require("../assets/js/kaspersky-parser.js");
+
+const FIXTURE_DIRECTORY = path.join(__dirname, "fixtures", "kaspersky");
+
+function fixture(name) {
+  return fs.readFileSync(path.join(FIXTURE_DIRECTORY, name));
+}
+
+function parseFixture(name, options) {
+  return parseKasperskyTxtBytes(fixture(name), options);
+}
+
+function diagnosticCodes(result) {
+  return result.diagnostics.map((diagnostic) => diagnostic.code);
+}
+
+function bytes(text) {
+  return new TextEncoder().encode(text);
+}
+
+test("01 recognizes two website records and preserves mapped fields", () => {
+  const result = parseFixture("01-websites-lf.txt");
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.counts.websites, 2);
+  assert.deepEqual(result.records[0], {
+    type: "website",
+    title: "Portal Alpha Fictício",
+    accountName: "Conta principal fictícia",
+    username: "pessoa.alpha@example.invalid",
+    password: 'FICTITIOUS:comma,quote"safe',
+    url: "https://alpha.example.invalid/sign-in?next=a:b",
+    notes: 'Somente teste fictício, com vírgula, "aspas" e dois-pontos: preservados.',
+    group: "Websites",
+    warnings: [],
+  });
+});
+
+test("02 recognizes applications after an empty Websites section and CRLF normalization", () => {
+  const result = parseFixture("02-applications-crlf.txt");
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.counts.applications, 2);
+  assert.equal(result.records[0].type, "application");
+  assert.equal(result.records[0].title, "Aplicativo Órbita Fictício");
+  assert.equal(result.records[0].accountName, "Perfil local fictício");
+  assert.equal(result.records[0].username, "user-app");
+  assert.equal(result.records[0].url, "");
+});
+
+test("03 blocks the unsupported Notes section", () => {
+  const result = parseFixture("03-notes-multiline-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.counts.unknownSections, 1);
+  assert.ok(diagnosticCodes(result).includes("UNKNOWN_SECTION"));
+});
+
+test("04 preserves explicit empty values and reports safe warnings", () => {
+  const result = parseFixture("04-empty-fields-lf.txt");
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.records[0].url, "");
+  assert.equal(result.records[0].accountName, "");
+  assert.equal(result.records[0].username, "");
+  assert.equal(result.records[0].password, "");
+  assert.equal(result.records[0].notes, "");
+  assert.equal(result.records[0].warnings.length, 5);
+  assert.equal(result.counts.diagnosticsByCode.EMPTY_VALUE, 5);
+});
+
+test("05 accepts one UTF-8 BOM and preserves accented text", () => {
+  const result = parseFixture("05-utf8-bom-accents-lf.txt");
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.records[0].title, "Árvore Órbita Fictícia");
+  assert.equal(result.records[0].password, "FICTITIOUS-AÇÃO-Ç-Ã");
+});
+
+test("06 splits on the first colon and does not treat inline dashes as a boundary", () => {
+  const result = parseFixture("06-delimiter-in-values-lf.txt");
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.records[0].username, "login:com:dois-pontos");
+  assert.equal(result.records[0].password, 'FICTITIOUS---NOT-A-BOUNDARY:comma,"quote"');
+  assert.equal(result.records[0].notes, "O texto contém --- mas a linha completa não é um separador.");
+});
+
+test("07 keeps repeated accounts in source order without deduplication", () => {
+  const result = parseFixture("07-multiple-accounts-hypothetical-lf.txt");
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.records[0].title, result.records[1].title);
+  assert.notEqual(result.records[0].username, result.records[1].username);
+});
+
+test("08 blocks unsupported PT-BR labels without translation", () => {
+  const result = parseFixture("08-ptbr-labels-hypothetical-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.ok(diagnosticCodes(result).includes("UNSUPPORTED_LOCALE"));
+  assert.equal(result.records.length, 0);
+});
+
+test("09 blocks and counts an unknown section", () => {
+  const result = parseFixture("09-unknown-section-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.counts.unknownSections, 1);
+  assert.ok(diagnosticCodes(result).includes("UNKNOWN_SECTION"));
+});
+
+test("10 rejects text without supported structure", () => {
+  const result = parseFixture("10-invalid-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.deepEqual(diagnosticCodes(result), ["NO_SUPPORTED_RECORDS"]);
+});
+
+test("11 rejects invalid UTF-8 without Windows-1252 fallback", () => {
+  const result = parseFixture("11-windows-1252-hypothetical-crlf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.deepEqual(diagnosticCodes(result), ["INVALID_UTF8"]);
+});
+
+test("12 rejects UTF-16 BOM before decoding", () => {
+  const result = parseFixture("12-utf16le-hypothetical.txt");
+
+  assert.equal(result.blocked, true);
+  assert.deepEqual(diagnosticCodes(result), ["ENCODING_UNSUPPORTED"]);
+});
+
+test("13 distinguishes a missing structural label from an empty value", () => {
+  const result = parseFixture("13-missing-required-field-negative-lf.txt");
+  const missing = result.diagnostics.filter((diagnostic) => diagnostic.code === "MISSING_FIELD");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.counts.blockedRecords, 1);
+  assert.equal(missing.length, 1);
+  assert.equal(missing[0].field, "Website name");
+});
+
+test("14 blocks a duplicate field without choosing either value", () => {
+  const result = parseFixture("14-duplicate-field-negative-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 0);
+  assert.equal(result.counts.blockedRecords, 1);
+  assert.ok(diagnosticCodes(result).includes("DUPLICATE_FIELD"));
+});
+
+test("15 blocks an unknown field inside a recognized record", () => {
+  const result = parseFixture("15-unknown-field-negative-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 0);
+  assert.ok(diagnosticCodes(result).includes("UNKNOWN_FIELD"));
+});
+
+test("16 blocks the whole result while retaining the supported record in memory", () => {
+  const result = parseFixture("16-mixed-supported-unknown-negative-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.records[0].title, "Portal Reconhecível Fictício");
+  assert.ok(diagnosticCodes(result).includes("UNKNOWN_SECTION"));
+});
+
+test("17 blocks an ambiguous multiline Comment separately from Notes", () => {
+  const result = parseFixture("17-comment-multiline-hypothetical-negative-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 0);
+  assert.equal(result.counts.blockedRecords, 1);
+  assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+});
+
+test("18 recognizes CRLF websites separated by a blank line and EOF without newline", () => {
+  const source = fixture("18-websites-blank-separated-crlf.txt");
+  const result = parseKasperskyTxtBytes(source);
+
+  assert.notEqual(source[source.length - 1], 0x0a);
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.records[0].title, "Estação Aurora Fictícia");
+  assert.equal(result.records[1].title, "Estação Boreal Fictícia");
+  assert.equal(result.records[0].accountName, "");
+  assert.equal(result.records[1].notes, "Comentário inteiramente inventado, teste.");
+});
+
+test("accepts ArrayBuffer and respects Uint8Array view boundaries", () => {
+  const source = bytes([
+    "Websites",
+    "",
+    "Website name: Buffer Fictício",
+    "Website URL: https://buffer.example.invalid",
+    "Login name: Conta fictícia",
+    "Login: buffer-user",
+    "Password: FICTITIOUS-BUFFER",
+    "Comment:",
+  ].join("\n"));
+  const arrayBuffer = source.buffer.slice(source.byteOffset, source.byteOffset + source.byteLength);
+  const padded = new Uint8Array(source.length + 2);
+  padded[0] = 0xff;
+  padded.set(source, 1);
+  padded[padded.length - 1] = 0xff;
+
+  assert.equal(parseKasperskyTxtBytes(arrayBuffer).blocked, false);
+  assert.equal(parseKasperskyTxtBytes(padded.subarray(1, padded.length - 1)).blocked, false);
+});
+
+test("rejects empty and whitespace-only byte input", () => {
+  assert.deepEqual(diagnosticCodes(parseKasperskyTxtBytes(new Uint8Array())), ["EMPTY_FILE"]);
+  assert.deepEqual(diagnosticCodes(parseKasperskyTxtBytes(bytes("\n\n"))), ["EMPTY_FILE"]);
+  assert.deepEqual(
+    diagnosticCodes(parseKasperskyTxtBytes(new Uint8Array([0xef, 0xbb, 0xbf]))),
+    ["EMPTY_FILE"],
+  );
+});
+
+test("rejects a header without records", () => {
+  const result = parseKasperskyTxtBytes(bytes("Websites\n"));
+
+  assert.equal(result.blocked, true);
+  assert.deepEqual(diagnosticCodes(result), ["NO_SUPPORTED_RECORDS"]);
+});
+
+test("blocks an explicitly empty structural field without calling it missing", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name:",
+    "Website URL: https://empty-title.example.invalid",
+    "Login name:",
+    "Login: empty-title-user",
+    "Password: FICTITIOUS-EMPTY-TITLE",
+    "Comment:",
+  ].join("\n")));
+  const structuralDiagnostic = result.diagnostics.find(
+    (diagnostic) => diagnostic.field === "Website name",
+  );
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.counts.blockedRecords, 1);
+  assert.equal(structuralDiagnostic.code, "EMPTY_VALUE");
+  assert.equal(structuralDiagnostic.severity, "error");
+  assert.ok(!diagnosticCodes(result).includes("MISSING_FIELD"));
+});
+
+test("rejects malformed and unsupported BOM sequences deterministically", () => {
+  assert.deepEqual(
+    diagnosticCodes(parseKasperskyTxtBytes(new Uint8Array([0xef, 0xbb]))),
+    ["INVALID_UTF8"],
+  );
+  assert.deepEqual(
+    diagnosticCodes(parseKasperskyTxtBytes(new Uint8Array([0xfe, 0xff, 0x00, 0x41]))),
+    ["ENCODING_UNSUPPORTED"],
+  );
+  assert.deepEqual(
+    diagnosticCodes(parseKasperskyTxtBytes(new Uint8Array([0x00, 0x00, 0xfe, 0xff]))),
+    ["ENCODING_UNSUPPORTED"],
+  );
+});
+
+test("rejects isolated carriage return line endings", () => {
+  const result = parseKasperskyTxtBytes(bytes("Websites\rWebsite name: Unsafe"));
+
+  assert.equal(result.blocked, true);
+  assert.deepEqual(diagnosticCodes(result), ["INVALID_LINE_ENDING"]);
+});
+
+test("rejects fields that start before a supported section", () => {
+  const result = parseKasperskyTxtBytes(bytes("Website name: Sem seção\nLogin: fictitious"));
+
+  assert.equal(result.blocked, true);
+  assert.ok(diagnosticCodes(result).includes("INVALID_SECTION"));
+  assert.ok(diagnosticCodes(result).includes("NO_SUPPORTED_RECORDS"));
+});
+
+test("blocks unlabeled content without including it in diagnostics", () => {
+  const secretContinuation = "DO-NOT-LEAK-CONTINUATION";
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Multiline Fictício",
+    "Website URL: https://multiline-test.example.invalid",
+    "Login name: Perfil fictício",
+    "Login: user",
+    "Password: FICTITIOUS-SECRET",
+    "Comment: First line",
+    secretContinuation,
+  ].join("\n")));
+
+  assert.equal(result.blocked, true);
+  assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+  assert.doesNotMatch(JSON.stringify(result.diagnostics), /DO-NOT-LEAK|FICTITIOUS-SECRET/u);
+});
+
+test("blocks an incomplete blank-delimited record without merging it into the next record", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Primeiro Incompleto",
+    "",
+    "Website name: Segundo Completo",
+    "Website URL: https://second.example.invalid",
+    "Login name:",
+    "Login: second-user",
+    "Password: FICTITIOUS-SECOND",
+    "Comment:",
+  ].join("\n")));
+
+  assert.equal(result.blocked, true);
+  assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_RECORD_BOUNDARY"));
+  assert.equal(result.records.length, 1);
+  assert.equal(result.records[0].title, "Segundo Completo");
+});
+
+test("enforces a configurable byte limit before decoding", () => {
+  const source = bytes("Websites\n");
+  const result = parseKasperskyTxtBytes(source, { maxBytes: source.length - 1 });
+
+  assert.equal(DEFAULT_MAX_BYTES, 5 * 1024 * 1024);
+  assert.deepEqual(diagnosticCodes(result), ["FILE_TOO_LARGE"]);
+  assert.throws(() => parseKasperskyTxtBytes(source, { maxBytes: 0 }), RangeError);
+});
+
+test("rejects unsupported API input types without echoing the input", () => {
+  assert.throws(
+    () => parseKasperskyTxtBytes("Password: SHOULD-NOT-APPEAR"),
+    (error) => error instanceof TypeError && !error.message.includes("SHOULD-NOT-APPEAR"),
+  );
+});
+
+test("duplicate sensitive fields never expose either value in diagnostics", () => {
+  const firstSecret = "FIRST-DO-NOT-LEAK";
+  const secondSecret = "SECOND-DO-NOT-LEAK";
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Duplicate Secret Fictício",
+    "Website URL: https://diagnostic.example.invalid",
+    "Login name:",
+    "Login: diagnostic-user",
+    `Password: ${firstSecret}`,
+    `Password: ${secondSecret}`,
+    "Comment:",
+  ].join("\n")));
+  const serializedDiagnostics = JSON.stringify(result.diagnostics);
+
+  assert.equal(result.blocked, true);
+  assert.ok(diagnosticCodes(result).includes("DUPLICATE_FIELD"));
+  assert.doesNotMatch(serializedDiagnostics, /FIRST-DO-NOT-LEAK|SECOND-DO-NOT-LEAK/u);
+});
+
+test("all fixture diagnostics use only safe structural coordinates", () => {
+  const fixtureNames = fs.readdirSync(FIXTURE_DIRECTORY)
+    .filter((name) => name.endsWith(".txt"))
+    .sort();
+  const allowedKeys = new Set(["code", "severity", "section", "recordIndex", "field"]);
+
+  assert.equal(fixtureNames.length, 18);
+
+  for (const name of fixtureNames) {
+    const result = parseFixture(name);
+    for (const diagnostic of result.diagnostics) {
+      assert.ok(
+        Object.keys(diagnostic).every((key) => allowedKeys.has(key)),
+        `${name} exposed an unexpected diagnostic property`,
+      );
+    }
+
+    assert.doesNotMatch(
+      JSON.stringify(result.diagnostics),
+      /FICTITIOUS|example\.invalid|@[A-Za-z0-9.-]+/u,
+      `${name} exposed a fixture value in diagnostics`,
+    );
+  }
+});
+
+test("removes at most one syntax space and preserves the remaining value exactly", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Spacing Fictício",
+    "Website URL: https://spacing.example.invalid/path:a",
+    "Login name: Account",
+    "Login: user:name",
+    "Password:  leading:and:trailing  ",
+    "Comment:  preserved  ",
+  ].join("\n")));
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records[0].password, " leading:and:trailing  ");
+  assert.equal(result.records[0].notes, " preserved  ");
+});
