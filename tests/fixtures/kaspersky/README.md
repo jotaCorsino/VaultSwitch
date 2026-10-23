@@ -1,6 +1,6 @@
 # Fixtures fictícias do TXT do Kaspersky
 
-Todos os arquivos desta pasta foram escritos do zero para a FMT-001. Eles não derivam de cofres, exportações reais, pessoas, contas ou serviços existentes.
+Todos os arquivos desta pasta foram escritos do zero para a FMT-001. A fixture `18` reproduz somente características **estruturais não sensíveis** de uma amostra examinada localmente; nenhum dado, domínio, identificador ou segredo do arquivo original foi copiado. Eles não derivam de cofres, exportações reais, pessoas, contas ou serviços existentes.
 
 Convenções de segurança:
 
@@ -31,6 +31,7 @@ Convenções de segurança:
 | `15-unknown-field-negative-lf.txt` | UTF-8, LF | Negativo inventado | Registro conhecido com `Invented field` | `UNKNOWN_FIELD`; preservar a ocorrência e bloquear |
 | `16-mixed-supported-unknown-negative-lf.txt` | UTF-8, LF | Negativo inventado | Website reconhecível seguido por seção/registro desconhecido | `UNKNOWN_SECTION`; bloquear o resultado global sem exportação parcial |
 | `17-comment-multiline-hypothetical-negative-lf.txt` | UTF-8, LF | Hipótese negativa inventada | `Comment` seguido por linha sem rótulo | `AMBIGUOUS_MULTILINE`; bloquear o registro |
+| `18-websites-blank-separated-crlf.txt` | UTF-8 sem BOM, CRLF, sem newline final | Separação por linha em branco observada em um exemplo local; **todos os valores fictícios** | Dois websites, linhas em branco entre os blocos, URL fictícia com porta, `Login name` vazio e comentários opcionais | Reconhecer dois registros sem delimitador `---` |
 
 ## Observação sobre expectativas
 
