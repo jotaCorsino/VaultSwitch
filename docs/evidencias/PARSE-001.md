@@ -5,7 +5,8 @@
 **Branch:** `feat/PARSE-001-parser`<br>
 **Base sincronizada:** `main` em `edc16347f5a25ae26bab554202cd4ebda2b09778`<br>
 **Commit de implementação:** `c65949119b79d86643dffe5788fffd9a006cc8de`<br>
-**Correção após revisão técnica:** `1bb6ca5709ed5ed594c62432a27604b1b6acef28`
+**Correção após revisão técnica:** `1bb6ca5709ed5ed594c62432a27604b1b6acef28`<br>
+**Correção de desempenho:** `4ba222ac9b29eee9a2613f4d516a284d9b4b841d`
 
 ## 1. Escopo executado
 
@@ -13,7 +14,7 @@
 - consulta ao fluxo, governança, Git/GitHub e segurança do Método ÓRBITA;
 - implementação de parser JavaScript puro e independente de DOM em `assets/js/kaspersky-parser.js`;
 - testes nativos do Node.js em `tests/kaspersky-parser.test.js`, sem dependências de terceiros;
-- cobertura das 18 fixtures fictícias e de 18 cenários adicionais de borda/segurança;
+- cobertura das 18 fixtures fictícias e de 20 cenários adicionais de borda, segurança e desempenho;
 - nenhuma implementação de CSV, interface, armazenamento, telemetria ou chamadas de rede;
 - nenhum uso, leitura ou cópia do arquivo real do usuário.
 
@@ -52,7 +53,8 @@ O limite padrão é **5 MiB** (`DEFAULT_MAX_BYTES`) e pode ser reduzido ou ampli
 - preservação dos demais espaços, acentuação, aspas, vírgulas, dois-pontos e `---` dentro de valores;
 - ordem e repetição de registros preservadas, sem deduplicação;
 - diferença entre campo ausente, vazio, duplicado e desconhecido;
-- bloqueio global por qualquer erro, inclusive quando já existem registros reconhecidos em memória.
+- bloqueio global por qualquer erro, inclusive quando já existem registros reconhecidos em memória;
+- índices de lookahead pré-computados em uma única passagem reversa, com consultas O(1) durante o parsing e processamento total aproximadamente O(n) no número de linhas.
 
 Além dos códigos do contrato, foram adicionados diagnósticos de implementação conservadores: `FILE_TOO_LARGE`, `INVALID_LINE_ENDING`, `INVALID_SECTION` e `AMBIGUOUS_RECORD_BOUNDARY`.
 
@@ -100,7 +102,9 @@ Foram cobertos também:
 - preâmbulo desconhecido com duas linhas sem `:` antes de seção suportada;
 - seção desconhecida entre duas seções válidas após `---`;
 - seção desconhecida vazia entre duas seções válidas separada por linhas em branco;
-- preservação de espaços e dois-pontos após o espaço sintático.
+- preservação de espaços e dois-pontos após o espaço sintático;
+- preâmbulo inválido sintético com 50.000 linhas, abaixo do limite padrão, sem varreduras repetidas de sufixo;
+- 2.000 blocos desconhecidos sintéticos intercalados com 2.000 registros válidos, preservando bloqueio, contagens e ausência de vazamento nos diagnósticos.
 
 ## 6. Execução técnica
 
@@ -115,15 +119,39 @@ node --test --experimental-test-coverage tests\kaspersky-parser.test.js
 Resultado final:
 
 ```text
-tests:   36
-pass:    36
+tests:   38
+pass:    38
 fail:    0
-linhas:  98,69%
-branches: 97,47%
+linhas:  99,09%
+branches: 97,52%
 funções: 100,00%
 ```
 
 `node --check` foi aprovado para parser e testes. `git diff --check` foi aprovado antes do commit de implementação.
+
+### Evidência observacional de escalabilidade
+
+A revisão apontou custo quadrático em entradas sem seção reconhecida. A reprodução local no HEAD anterior, com linhas fictícias no formato `Unrecognized field N: FICTITIOUS`, apresentou:
+
+| Linhas | Bytes | Tempo observado antes |
+| ---: | ---: | ---: |
+| 2.000 | 70.889 | 43,21 ms |
+| 4.000 | 142.889 | 132,92 ms |
+| 8.000 | 286.889 | 532,93 ms |
+| 16.000 | 580.889 | 2.135,11 ms |
+
+Após o pré-cálculo dos lookaheads, cinco execuções por tamanho, com aquecimento e mediana, produziram:
+
+| Linhas | Bytes | Mediana após a correção |
+| ---: | ---: | ---: |
+| 2.000 | 70.889 | 1,75 ms |
+| 4.000 | 142.889 | 1,99 ms |
+| 8.000 | 286.889 | 3,31 ms |
+| 16.000 | 580.889 | 8,11 ms |
+| 32.000 | 1.172.889 | 14,32 ms |
+| 64.000 | 2.356.889 | 30,42 ms |
+
+Os números são indicativos desta máquina e não são um benchmark portável. Nenhum valor exato de tempo é usado como gate automatizado. A evidência relevante é a remoção das varreduras de sufixo do loop principal, o crescimento aproximadamente proporcional à entrada e a execução funcional das entradas grandes na suíte.
 
 ## 7. Verificações de segurança
 
@@ -148,7 +176,9 @@ A correção passou a:
 - finalizar com segurança o registro completo anterior quando uma fronteira em branco antecede bloco desconhecido estruturalmente identificável;
 - preservar os registros válidos anteriores/posteriores em memória, mantendo obrigatoriamente `blocked=true` no resultado global.
 
-Após a correção, a suíte completa passou em 36/36 testes.
+Após a primeira correção, a suíte completa passou em 36/36 testes.
+
+A revisão adicional reproduziu crescimento próximo de O(n²) em conteúdo inválido sem seção suportada. A causa era a combinação de três lookaheads que percorriam linhas futuras durante o loop principal: próxima linha não vazia, próxima seção reconhecida e próxima evidência de seção desconhecida. A correção de desempenho passou a construir três índices `Int32Array` em uma única passagem reversa e a consultar cada posição em O(1), sem alterar os estados, diagnósticos ou regras de reconhecimento. Dois testes sintéticos grandes foram acrescentados sem limiar de tempo dependente de hardware. Após a correção, a suíte completa passou em 38/38 testes.
 
 ## 9. Limitações e riscos residuais
 
@@ -160,6 +190,7 @@ Após a correção, a suíte completa passou em 36/36 testes.
 6. O limite de 5 MiB é um default de proteção, não um limite documentado do KPM; o chamador pode configurá-lo conscientemente.
 7. Testes automatizados não comprovam ausência de vulnerabilidades nem compatibilidade com exportações reais não avaliadas.
 8. Conteúdo sem rótulo e sem fronteira/evidência estrutural suficiente pode permanecer classificado como `AMBIGUOUS_MULTILINE` em vez de `UNKNOWN_SECTION`; ambos bloqueiam globalmente e nenhum conteúdo é descartado silenciosamente.
+9. O pré-cálculo usa três vetores de índices com memória O(n) no número de linhas. O limite configurável de bytes restringe a entrada, mas o consumo total em memória também inclui texto decodificado, linhas e índices.
 
 ## 10. Gate
 
