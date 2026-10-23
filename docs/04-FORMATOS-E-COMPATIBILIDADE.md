@@ -21,11 +21,11 @@ Referência:
 
 O VaultSwitch não reutilizará o código dessa implementação. O contrato será reimplementado e validado com fixtures próprias.
 
-Resultado da investigação FMT-001, ainda aguardando homologação: [Contrato do TXT do Kaspersky Password Manager](06-CONTRATO-TXT-KASPERSKY.md).
+Contrato FMT-001 homologado para escopo restrito (não é declaração de compatibilidade universal): [Contrato do TXT do Kaspersky Password Manager](06-CONTRATO-TXT-KASPERSKY.md).
 
-## Ponto ainda não homologado
+## Compatibilidade ainda não comprovada
 
-O formato TXT é voltado a impressão e pode variar por versão, idioma e conteúdo. Portanto, FMT-001 deve validar:
+O formato TXT pode variar por versão, idioma e conteúdo. A FMT-001 e a PARSE-001 homologaram somente um subconjunto e permanecem lacunas quanto a:
 
 - rótulos reais da versão usada;
 - idioma dos rótulos;
@@ -45,13 +45,17 @@ Referências oficiais:
 - https://keepassxc.org/docs/KeePassXC_UserGuide
 - https://keepassxc.org/docs/KeePassXC_GettingStarted
 
-A saída planejada usará colunas simples e explícitas:
+A saída **inicial e experimental** da CSV-001 seguirá seis colunas mapeáveis, a serem validadas pelo assistente do KeePassXC em QA-001:
 
 ```csv
 Group,Title,Username,Password,URL,Notes
 ```
 
-A compatibilidade será considerada homologada somente depois de um teste de importação ponta a ponta.
+O campo `Login name` do Kaspersky foi preservado em `accountName` no parser, mas **não tem mapeamento comprovado** nas seis colunas acima. Na CSV-001, se houver `accountName` não vazio, o serializador V0 deverá **bloquear** a geração e reportar `ACCOUNT_NAME_UNMAPPED`, até uma estratégia de destino sem perda ser homologada. Não incluir coluna extra supondo que o KeePassXC a importará.
+
+O campo `Comment` mapeia diretamente para `Notes`. O serializador deve preservar inclusive texto com múltiplas linhas **quando já fornecido em um registro normalizado fictício**; isso não significa que o parser saiba reconhecer esses comentários no TXT real.
+
+A [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6) é requisito bloqueante antes de qualquer uso real: a linha `---` pode ser um delimitador ou texto livre de `Comment`. A compatibilidade será considerada homologada somente após resolução dessa lacuna, tratamento do `accountName` não vazio e teste de importação ponta a ponta com dados fictícios.
 
 ## Limitação importante
 
