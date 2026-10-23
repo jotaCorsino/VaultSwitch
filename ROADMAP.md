@@ -76,6 +76,8 @@ O arquivo real do usuário não deve ser enviado ao GitHub nem usado como fixtur
 
 **Estado:** ⚪ Planejado
 
+**Tarefa de implementação:** [docs/tarefas/PARSE-001.md](docs/tarefas/PARSE-001.md)
+
 ### Objetivo
 Ler o arquivo localmente, detectar o formato e transformar registros suportados em objetos normalizados em memória.
 
