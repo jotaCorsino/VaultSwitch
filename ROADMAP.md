@@ -33,7 +33,10 @@ Registrar problema, escopo, arquitetura inicial, riscos, critérios de homologa�
 
 ## BOOT-001 — Bootstrap local
 
-**Estado:** ⚪ Planejado
+**Estado:** 🟢 Concluído (homologado)
+
+**Homologação humana:** 23/10/2026, após relatório do Codex em C:\\Dev\\VaultSwitch. Origin correto, HEAD `1ae772b88627b76504ffa388e733fddaaa89ead5`, `main` sem divergência, `git fsck` sem erros reportados, working tree limpa. Evidências locais fornecidas pelo agente de implementação; revisão remota confirmou o HEAD.
+
 
 ### Objetivo
 Vincular a pasta local do projeto ao repositório remoto e confirmar branch, remoto, HEAD e árvore de trabalho.
@@ -46,6 +49,8 @@ Nenhuma funcionalidade deve ser implementada nessa tarefa.
 ## FMT-001 — Contrato do formato Kaspersky
 
 **Estado:** ⚪ Planejado
+
+**Tarefa detalhada:** [docs/tarefas/FMT-001.md](docs/tarefas/FMT-001.md)
 
 ### Objetivo
 Definir e testar o contrato de parsing do TXT exportado pelo Kaspersky Password Manager antes de implementar a conversão completa.
