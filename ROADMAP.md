@@ -100,9 +100,11 @@ Ler o arquivo localmente, detectar o formato e transformar registros suportados 
 
 ## CSV-001 — Gerador KeePassXC
 
-**Estado:** ⚪ Planejado
+**Estado:** 🔵 Aguardando homologação
 
 **Tarefa detalhada:** [docs/tarefas/CSV-001.md](docs/tarefas/CSV-001.md)
+
+**Entrega para revisão:** [serializador](assets/js/keepassxc-csv.js) · [testes](tests/keepassxc-csv.test.js) · [evidências](docs/evidencias/CSV-001.md) · [Draft PR #8](https://github.com/jotaCorsino/VaultSwitch/pull/8)
 
 ### Objetivo
 Serializar os registros normalizados em CSV robusto para o assistente de importação do KeePassXC.
