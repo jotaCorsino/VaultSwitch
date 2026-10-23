@@ -218,11 +218,21 @@
   function nextNonBlankLine(lines, startIndex) {
     for (let index = startIndex; index < lines.length; index += 1) {
       if (lines[index] !== "") {
-        return lines[index];
+        return { index, line: lines[index] };
       }
     }
 
     return undefined;
+  }
+
+  function hasRecognizedSectionAhead(lines, startIndex) {
+    for (let index = startIndex; index < lines.length; index += 1) {
+      if (RECOGNIZED_SECTION_SET.has(lines[index])) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   function looksLikeUnknownSection(lines, lineIndex) {
@@ -249,6 +259,26 @@
     }
 
     return false;
+  }
+
+  function startsUnknownBlock(lines, lineIndex) {
+    const line = lines[lineIndex];
+
+    if (
+      !line ||
+      line.includes(":") ||
+      line.trim() === "---" ||
+      RECOGNIZED_SECTION_SET.has(line) ||
+      UNSUPPORTED_SECTION_NAMES.has(line) ||
+      UNSUPPORTED_LOCALE_HEADERS.has(line)
+    ) {
+      return false;
+    }
+
+    return (
+      looksLikeUnknownSection(lines, lineIndex) ||
+      hasRecognizedSectionAhead(lines, lineIndex + 1)
+    );
   }
 
   function parseKasperskyTxtBytes(input, options) {
@@ -363,6 +393,15 @@
       skippingUnsupportedSection = false;
     }
 
+    function enterUnknownSection() {
+      finalizeRecord();
+      section = null;
+      definition = null;
+      skippingUnsupportedSection = true;
+      state.unknownSections += 1;
+      addDiagnostic(state, "UNKNOWN_SECTION", "error");
+    }
+
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
       const line = lines[lineIndex];
 
@@ -407,7 +446,18 @@
         }
 
         const nextLine = nextNonBlankLine(lines, lineIndex + 1);
-        if (nextLine !== undefined && lineUsesField(nextLine, definition.structuralField)) {
+        if (
+          nextLine !== undefined &&
+          lineUsesField(nextLine.line, definition.structuralField)
+        ) {
+          if (!isCompleteForBlankBoundary(record)) {
+            reportRecordError("AMBIGUOUS_RECORD_BOUNDARY");
+          }
+          finalizeRecord();
+        } else if (
+          nextLine !== undefined &&
+          startsUnknownBlock(lines, nextLine.index)
+        ) {
           if (!isCompleteForBlankBoundary(record)) {
             reportRecordError("AMBIGUOUS_RECORD_BOUNDARY");
           }
@@ -417,10 +467,11 @@
       }
 
       if (!definition) {
-        if (looksLikeUnknownSection(lines, lineIndex)) {
-          state.unknownSections += 1;
-          addDiagnostic(state, "UNKNOWN_SECTION", "error");
-          skippingUnsupportedSection = true;
+        if (
+          startsUnknownBlock(lines, lineIndex) ||
+          hasRecognizedSectionAhead(lines, lineIndex + 1)
+        ) {
+          enterUnknownSection();
         } else if (line.includes(":") && !reportedInvalidSectionStart) {
           addDiagnostic(state, "INVALID_SECTION", "error");
           reportedInvalidSectionStart = true;
@@ -428,12 +479,17 @@
         continue;
       }
 
-      if (!record && looksLikeUnknownSection(lines, lineIndex)) {
-        section = null;
-        definition = null;
-        skippingUnsupportedSection = true;
-        state.unknownSections += 1;
-        addDiagnostic(state, "UNKNOWN_SECTION", "error");
+      if (!record && startsUnknownBlock(lines, lineIndex)) {
+        enterUnknownSection();
+        continue;
+      }
+
+      if (
+        record &&
+        isCompleteForBlankBoundary(record) &&
+        looksLikeUnknownSection(lines, lineIndex)
+      ) {
+        enterUnknownSection();
         continue;
       }
 

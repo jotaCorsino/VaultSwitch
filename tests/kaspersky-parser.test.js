@@ -395,6 +395,116 @@ test("all fixture diagnostics use only safe structural coordinates", () => {
   }
 });
 
+test("blocks an unknown empty header before the first supported section", () => {
+  const unknownHeader = "Unknown vault section";
+  const result = parseKasperskyTxtBytes(bytes([
+    unknownHeader,
+    "",
+    "Websites",
+    "",
+    "Website name: Prelude Website Fictício",
+    "Website URL: https://prelude.example.invalid",
+    "Login name:",
+    "Login: prelude-user",
+    "Password: FICTITIOUS-PRELUDE",
+    "Comment:",
+  ].join("\n")));
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.counts.unknownSections, 1);
+  assert.ok(diagnosticCodes(result).includes("UNKNOWN_SECTION"));
+  assert.doesNotMatch(JSON.stringify(result.diagnostics), new RegExp(unknownHeader, "u"));
+});
+
+test("counts one unknown preamble block containing two unlabeled lines", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Other fictitious data",
+    "No fictitious items",
+    "",
+    "Websites",
+    "",
+    "Website name: Two-line Prelude Fictício",
+    "Website URL: https://two-line-prelude.example.invalid",
+    "Login name:",
+    "Login: two-line-user",
+    "Password: FICTITIOUS-TWO-LINE-PRELUDE",
+    "Comment:",
+  ].join("\n")));
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.counts.unknownSections, 1);
+  assert.equal(result.counts.diagnosticsByCode.UNKNOWN_SECTION, 1);
+  assert.doesNotMatch(JSON.stringify(result.diagnostics), /Other fictitious|No fictitious/u);
+});
+
+test("classifies an unknown section between valid sections after a dash boundary", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Before Dash Unknown Fictício",
+    "Website URL: https://before-dash.example.invalid",
+    "Login name:",
+    "Login: before-dash-user",
+    "Password: FICTITIOUS-BEFORE-DASH",
+    "Comment:",
+    "",
+    "---",
+    "",
+    "Unknown middle section",
+    "Unknown field: FICTITIOUS-UNKNOWN-MIDDLE",
+    "",
+    "---",
+    "",
+    "Applications",
+    "",
+    "Application: After Dash Unknown Fictício",
+    "Login name:",
+    "Login: after-dash-user",
+    "Password: FICTITIOUS-AFTER-DASH",
+    "Comment:",
+  ].join("\n")));
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.counts.unknownSections, 1);
+  assert.equal(result.counts.diagnosticsByCode.UNKNOWN_SECTION, 1);
+  assert.ok(!diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+  assert.ok(!diagnosticCodes(result).includes("MISSING_FIELD"));
+  assert.doesNotMatch(JSON.stringify(result.diagnostics), /FICTITIOUS-UNKNOWN-MIDDLE/u);
+});
+
+test("classifies an empty unknown section between blank-delimited valid sections", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Before Blank Unknown Fictício",
+    "Website URL: https://before-blank.example.invalid",
+    "Login name:",
+    "Login: before-blank-user",
+    "Password: FICTITIOUS-BEFORE-BLANK",
+    "Comment:",
+    "",
+    "Unknown empty middle section",
+    "",
+    "Applications",
+    "",
+    "Application: After Blank Unknown Fictício",
+    "Login name:",
+    "Login: after-blank-user",
+    "Password: FICTITIOUS-AFTER-BLANK",
+    "Comment:",
+  ].join("\n")));
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.counts.unknownSections, 1);
+  assert.equal(result.counts.diagnosticsByCode.UNKNOWN_SECTION, 1);
+  assert.ok(!diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+  assert.ok(!diagnosticCodes(result).includes("MISSING_FIELD"));
+});
+
 test("removes at most one syntax space and preserves the remaining value exactly", () => {
   const result = parseKasperskyTxtBytes(bytes([
     "Websites",
