@@ -19,6 +19,8 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 **Legenda:** ⚪ Planejado · 🟡 Em implementação · 🔵 Em validação / aguardando homologação · 🟢 Concluído (homologado) · 🟠 Pausado.
 
+**Próxima tarefa:** [PARSE-001 — parser Kaspersky](docs/tarefas/PARSE-001.md)
+
 **Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Tarefa FMT-001](docs/tarefas/FMT-001.md) · [Contrato proposto](docs/06-CONTRATO-TXT-KASPERSKY.md) · [Evidências](docs/evidencias/FMT-001.md)
 
 ## Problema / contexto
