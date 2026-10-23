@@ -15,6 +15,7 @@ Nenhuma exportação real foi usada. As fixtures do projeto são inteiramente in
 | Classe | Significado neste documento |
 | --- | --- |
 | **Confirmado** | Declarado por documentação oficial da Kaspersky. |
+| **Observação direta local** | Propriedade conferida por inspeção técnica de um exemplo fornecido pelo usuário; não demonstra comportamento universal de versões ou idiomas do KPM. |
 | **Evidência secundária** | Observado em relato público ou implementação independente; útil, mas não normativo. |
 | **Hipótese** | Comportamento proposto para teste, ainda sem evidência suficiente do exportador. |
 | **Não verificado** | Não foi possível determinar com segurança. Não integra o suporte declarado. |
@@ -34,6 +35,8 @@ Consulta realizada em 23/10/2026.
 | E5 | [`MrSuicideParrot/Kaspersky-Password-Manager-to-CSV`, código](https://github.com/MrSuicideParrot/Kaspersky-Password-Manager-to-CSV/blob/131fd49425ba1f634b7b8864191440b1152090ff/KPM_to_CSV.py) | Corrobora websites/aplicações; acrescenta seção de notas, continuação até linha vazia e leitura UTF-8. | Versão do KPM não identificada; suposições do conversor podem não refletir o exportador atual. |
 | E6 | [Relato público de exportação do KPM 9.2](https://sourceforge.net/p/keepass/discussion/329221/thread/cbd1c7b520/) | Corrobora cabeçalho `Websites`, seis rótulos em inglês e separador `---`. | Amostra antiga, parcial e fornecida por usuário. |
 
+| E7 | Exemplo TXT fornecido pelo usuário em 23/10/2026, examinado **somente localmente**, sem transmitir ou versionar o conteúdo | Demonstra cinco registros de `Websites`, os seis rótulos em inglês, registros separados por linha vazia, UTF-8 sem BOM, CRLF e encerramento em EOF sem quebra final. | É uma única amostra. Contém dados sensíveis que **não devem ser copiados** para este repositório, prompts ou relatórios. Não comprova `Applications`, `Notes` ou multiline. |
+
 O código de terceiros foi consultado apenas como evidência. Nenhum trecho foi incorporado ao VaultSwitch. Arquivos públicos chamados de “sample” não foram abertos, pois sua origem e sanitização não podiam ser garantidas.
 
 ## 3. O que as evidências permitem afirmar
@@ -43,14 +46,17 @@ O código de terceiros foi consultado apenas como evidência. Nenhum trecho foi 
 | O KPM 25.0 exporta credenciais e notas para um arquivo TXT. | **Confirmado** | E1 |
 | O TXT exportado não é protegido/criptografado pela aplicação. | **Confirmado** | E1 |
 | Websites possuem nome, endereço e uma ou mais contas; aplicações possuem nome e contas. | **Confirmado** | E2 |
-| Exportações em inglês podem conter `Websites` e `Applications`. | **Evidência secundária** | E4, E5, E6 |
+| Exportações em inglês podem conter `Websites` e `Applications`. | **Evidência secundária** para `Applications`, **observação direta local** para `Websites` | E4, E5, E6, E7 |
 | Websites podem usar `Website name`, `Website URL`, `Login name`, `Login`, `Password` e `Comment`. | **Evidência secundária** | E4, E5, E6 |
 | Aplicações podem usar `Application`, `Login name`, `Login`, `Password` e `Comment`. | **Evidência secundária** | E4, E5 |
 | Uma linha formada por `---` pode separar registros. | **Evidência secundária** | E4, E6 |
+| Uma linha em branco separa os websites no arquivo exemplificado, sem `---`. | **Observação direta local** | E7 |
+| O último website pode terminar em EOF sem newline final na variante observada. | **Observação direta local** | E7 |
 | Uma seção `Notes` pode usar os campos `Name` e `Text`. | **Evidência secundária**, com menor confiança | E5 |
 | Comentários/notas podem continuar em linhas seguintes até uma linha vazia. | **Evidência secundária**, com menor confiança | E5; E4 não implementa a mesma regra |
-| O arquivo é UTF-8. | **Evidência secundária** | E5 abre explicitamente como UTF-8; E1 não especifica |
-| O exportador usa CRLF, LF, BOM UTF-8 ou UTF-16. | **Não verificado** | Nenhuma fonte normativa encontrada |
+| A amostra E7 é UTF-8 sem BOM e tem finais CRLF. | **Observação direta local** | E7; não comprova a codificação/EOL de outras exportações. |
+| O arquivo é UTF-8. | **Evidência secundária** para comportamento geral | E5 abre explicitamente como UTF-8; E1 não especifica |
+| O exportador usa sempre CRLF, LF, BOM UTF-8 ou UTF-16. | **Não verificado** | E7 prova apenas CRLF sem BOM naquela amostra; nenhuma fonte normativa define a variante geral. |
 | O idioma da interface determina os rótulos no arquivo. | **Não verificado** | E3 traduz a interface, não mostra o conteúdo exportado |
 | Uma conta adicional do mesmo website vira outro bloco repetido. | **Hipótese** | E2 confirma múltiplas contas, mas não sua serialização |
 | Tipos como cartões, endereços, documentos e “Other” aparecem no TXT e com quais rótulos. | **Não verificado** | E2 confirma os tipos no cofre, não o formato exportado |
@@ -63,7 +69,8 @@ O suporte inicial candidato fica limitado a:
 - finais de linha CRLF ou LF, normalizados internamente para LF;
 - rótulos em inglês exatamente conhecidos;
 - seções `Websites` e `Applications`;
-- blocos delimitados por uma linha cujo conteúdo aparado seja exatamente `---` ou pelo fim da seção/arquivo;
+- aceitar **duas variantes de fronteira**, sem assumir que sejam universais: separador `---` (evidência secundária) e linha(s) em branco entre registros completos (observada em E7); também aceitar EOF sem newline final;
+- no caso de linhas em branco, considerar fronteira somente com bloco estruturalmente completo e próximo bloco iniciado por identificador/cabeçalho reconhecido; nunca converter conteúdo ambíguo em registro válido;
 - campos conhecidos descritos abaixo;
 - valores vazios explícitos, sem inventar substitutos;
 - preservação da ordem dos registros e dos caracteres do valor.
@@ -89,10 +96,13 @@ documento       := linhas_em_branco* secao+
 secao           := secao_websites | secao_apps | secao_desconhecida
 secao_websites  := "Websites" linhas_em_branco* registro_website*
 secao_apps      := "Applications" linhas_em_branco* registro_application*
-registro        := campos (separador | proxima_secao | EOF)
-separador       := linha cujo conteúdo aparado é exatamente "---"
+registro        := campos (separador_tracos | separador_branco | proxima_secao | EOF)
+separador_tracos := linha cujo conteúdo aparado é exatamente "---"
+separador_branco := linha(s) vazia(s) entre registro completo e proximo registro reconhecido
 campo           := rotulo ":" espaço_sintatico_opcional valor
 ```
+
+A linha em branco imediatamente após o cabeçalho `Websites` é layout, não um registro vazio. Na variante E7, cada registro possui seis campos e os blocos são separados por uma linha em branco; o último termina em EOF sem newline. Isso é **evidência do exemplo local**, não gramática oficial do produto. Se um bloco contiver conteúdo sem rótulo ou fronteira ambígua (como possíveis valores multilinha), a análise deve bloquear em vez de perder dados.
 
 Cabeçalhos e rótulos são comparados literalmente e com diferenciação entre maiúsculas/minúsculas no contrato V0. Relaxar essa regra exigirá evidência e teste próprios.
 
@@ -142,9 +152,12 @@ Descartar ou remapear automaticamente `Login name` não é permitido.
 - No máximo um espaço ASCII imediatamente após o primeiro `:` é tratado como espaçamento sintático. Espaços adicionais pertencem ao valor.
 - Vírgulas, aspas, ponto e vírgula e caracteres com significado futuro para CSV não possuem função especial no TXT e devem ser preservados literalmente.
 - `---` só delimita um registro quando ocupa sozinho a linha após remoção de espaços periféricos.
+- Linha(s) em branco também podem delimitar websites na variante E7, **apenas** se o bloco anterior estiver estruturalmente completo e o próximo começar com um rótulo estrutural ou seção reconhecida.
+- Não confundir a linha vazia após cabeçalho de seção com registro vazio; preservar um último registro completo mesmo quando o arquivo terminar sem newline.
 - `---` dentro de uma linha de valor não é delimitador.
 - Uma linha de continuação formada somente por `---` é ambígua; enquanto multiline não for homologado, o registro deve ser bloqueado.
-- Linhas vazias fora de valores multilinha são layout e não criam registros.
+- Linhas vazias fora de valores multilinha são layout ou fronteira, conforme contexto; não criam registros vazios.
+- A amostra E7 não comprova sintaxe de conteúdo multiline: continuação de `Comment`/`Notes` permanece bloqueada por ambiguidade.
 - Registros repetidos não devem ser deduplicados, agrupados ou fundidos automaticamente.
 
 O parser futuro não deve aplicar `trim()` indiscriminado a segredos ou notas. Qualquer normalização de espaços precisa distinguir sintaxe do exportador de conteúdo do usuário.
@@ -161,7 +174,7 @@ O parser futuro não deve aplicar `trim()` indiscriminado a segredos ou notas. Q
 6. Não substituir bytes inválidos por `U+FFFD` e não fazer fallback silencioso para Windows-1252.
 7. Normalizar CRLF e LF para uma representação interna comum; CR isolado é não verificado e deve ser rejeitado ou tratado por decisão explícita posterior.
 
-Aceitar BOM UTF-8 e ambos os finais de linha é uma regra de robustez proposta, não uma afirmação sobre o que o KPM emite.
+E7 demonstrou UTF-8 sem BOM e CRLF em **uma** exportação. Aceitar BOM UTF-8 e LF é regra de robustez proposta, não uma afirmação universal sobre o que o KPM emite.
 
 ### 7.2 Codificações ainda não suportadas
 
@@ -176,7 +189,7 @@ Sem implementar código nesta tarefa, PARSE-001 deverá seguir esta ordem:
 3. **Normalização de linhas:** CRLF/LF para LF, preservando conteúdo dos valores.
 4. **Detecção de idioma/variante:** procurar apenas cabeçalhos homologados; não traduzir por aproximação.
 5. **Detecção de seção:** iniciar contexto somente em cabeçalho conhecido.
-6. **Coleta de registro:** até separador exato, próxima seção ou EOF.
+6. **Coleta de registro:** até separador de traços, linha(s) vazia(s) entre blocos completos com próximo registro reconhecido, próxima seção ou EOF. Linhas em branco isoladas ou conteúdo multiline ambíguo não permitem perda silenciosa.
 7. **Leitura de campo:** separar somente no primeiro `:` e validar rótulo literal.
 8. **Validação estrutural:** detectar rótulo ausente, duplicado, desconhecido ou fora de seção.
 9. **Preservação:** manter ordem, campos vazios e metadados de origem; nunca deduplicar.
@@ -222,6 +235,7 @@ Os diagnósticos devem conter apenas código, seção, índice do registro e nom
 | Rótulo desconhecido em registro conhecido | Negativo inventado | `15-unknown-field-negative-lf.txt` | `UNKNOWN_FIELD`; preservar a ocorrência como não interpretada e bloquear. |
 | Website reconhecível seguido por seção desconhecida | Negativo inventado | `16-mixed-supported-unknown-negative-lf.txt` | `UNKNOWN_SECTION`; bloquear o resultado global, inclusive o website reconhecido, sem exportação parcial implícita. |
 | `Comment` hipotético em múltiplas linhas | Hipótese negativa inventada | `17-comment-multiline-hypothetical-negative-lf.txt` | `AMBIGUOUS_MULTILINE`; bloquear o registro enquanto a gramática não estiver homologada. |
+| Websites em blocos separados por linha em branco, CRLF, EOF sem newline | Estrutura observada localmente (E7), **valores fictícios inventados** | `18-websites-blank-separated-crlf.txt` | Reconhecer dois websites fictícios sem exigir `---` nem newline final. |
 
 O inventário detalhado está em [`tests/fixtures/kaspersky/README.md`](../tests/fixtures/kaspersky/README.md).
 
@@ -229,7 +243,7 @@ O inventário detalhado está em [`tests/fixtures/kaspersky/README.md`](../tests
 
 PARSE-001 só deve começar depois de homologação humana deste contrato e das seguintes decisões:
 
-1. aceitar formalmente o escopo limitado a rótulos em inglês de websites/aplicações ou fornecer versão e idioma não sensíveis para outro alvo;
+1. aceitar formalmente o escopo limitado a rótulos em inglês; `Websites` tem observação local E7, enquanto `Applications` permanece apoiado em evidência secundária; suportar ambos os separadores identificados, sem aceitar multiline por inferência;
 2. decidir como preservar `Login name` no modelo normalizado;
 3. decidir se a seção `Notes` fica bloqueada na primeira versão ou obter uma estrutura sanitizada/manual suficiente para homologá-la;
 4. aceitar a política UTF-8 estrita ou adicionar evidência para outra codificação;
