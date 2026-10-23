@@ -215,53 +215,68 @@
     return colonIndex >= 0 && line.slice(0, colonIndex) === field;
   }
 
-  function nextNonBlankLine(lines, startIndex) {
-    for (let index = startIndex; index < lines.length; index += 1) {
-      if (lines[index] !== "") {
-        return { index, line: lines[index] };
-      }
+  function buildLineLookahead(lines) {
+    const nextNonBlankIndex = new Int32Array(lines.length + 1);
+    const nextSectionEvidenceIndex = new Int32Array(lines.length + 1);
+    const nextRecognizedSectionIndex = new Int32Array(lines.length + 1);
+
+    nextNonBlankIndex.fill(-1);
+    nextSectionEvidenceIndex.fill(-1);
+    nextRecognizedSectionIndex.fill(-1);
+
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+      const line = lines[index];
+      nextNonBlankIndex[index] = line !== ""
+        ? index
+        : nextNonBlankIndex[index + 1];
+      nextSectionEvidenceIndex[index] = line !== "" && line.trim() !== "---"
+        ? index
+        : nextSectionEvidenceIndex[index + 1];
+      nextRecognizedSectionIndex[index] = RECOGNIZED_SECTION_SET.has(line)
+        ? index
+        : nextRecognizedSectionIndex[index + 1];
     }
 
-    return undefined;
+    return {
+      nextNonBlankIndex,
+      nextSectionEvidenceIndex,
+      nextRecognizedSectionIndex,
+    };
   }
 
-  function hasRecognizedSectionAhead(lines, startIndex) {
-    for (let index = startIndex; index < lines.length; index += 1) {
-      if (RECOGNIZED_SECTION_SET.has(lines[index])) {
-        return true;
-      }
-    }
-
-    return false;
+  function nextNonBlankLine(lines, lookahead, startIndex) {
+    const index = lookahead.nextNonBlankIndex[startIndex];
+    return index === -1 ? undefined : { index, line: lines[index] };
   }
 
-  function looksLikeUnknownSection(lines, lineIndex) {
+  function hasRecognizedSectionAhead(lookahead, startIndex) {
+    return lookahead.nextRecognizedSectionIndex[startIndex] !== -1;
+  }
+
+  function looksLikeUnknownSection(lines, lookahead, lineIndex) {
     const line = lines[lineIndex];
     if (!line || line.includes(":") || line.trim() === "---") {
       return false;
     }
 
-    for (let index = lineIndex + 1; index < lines.length; index += 1) {
-      const candidate = lines[index];
-      if (candidate === "" || candidate.trim() === "---") {
-        continue;
-      }
-
-      if (
-        RECOGNIZED_SECTION_SET.has(candidate) ||
-        UNSUPPORTED_SECTION_NAMES.has(candidate) ||
-        UNSUPPORTED_LOCALE_HEADERS.has(candidate)
-      ) {
-        return false;
-      }
-
-      return candidate.indexOf(":") > 0;
+    const candidateIndex = lookahead.nextSectionEvidenceIndex[lineIndex + 1];
+    if (candidateIndex === -1) {
+      return false;
     }
 
-    return false;
+    const candidate = lines[candidateIndex];
+    if (
+      RECOGNIZED_SECTION_SET.has(candidate) ||
+      UNSUPPORTED_SECTION_NAMES.has(candidate) ||
+      UNSUPPORTED_LOCALE_HEADERS.has(candidate)
+    ) {
+      return false;
+    }
+
+    return candidate.indexOf(":") > 0;
   }
 
-  function startsUnknownBlock(lines, lineIndex) {
+  function startsUnknownBlock(lines, lookahead, lineIndex) {
     const line = lines[lineIndex];
 
     if (
@@ -276,8 +291,8 @@
     }
 
     return (
-      looksLikeUnknownSection(lines, lineIndex) ||
-      hasRecognizedSectionAhead(lines, lineIndex + 1)
+      looksLikeUnknownSection(lines, lookahead, lineIndex) ||
+      hasRecognizedSectionAhead(lookahead, lineIndex + 1)
     );
   }
 
@@ -297,6 +312,7 @@
 
     const state = createResultState();
     const lines = decoded.text.split("\n");
+    const lookahead = buildLineLookahead(lines);
     const nextRecordIndex = { Websites: 1, Applications: 1 };
     let section = null;
     let definition = null;
@@ -445,7 +461,7 @@
           continue;
         }
 
-        const nextLine = nextNonBlankLine(lines, lineIndex + 1);
+        const nextLine = nextNonBlankLine(lines, lookahead, lineIndex + 1);
         if (
           nextLine !== undefined &&
           lineUsesField(nextLine.line, definition.structuralField)
@@ -456,7 +472,7 @@
           finalizeRecord();
         } else if (
           nextLine !== undefined &&
-          startsUnknownBlock(lines, nextLine.index)
+          startsUnknownBlock(lines, lookahead, nextLine.index)
         ) {
           if (!isCompleteForBlankBoundary(record)) {
             reportRecordError("AMBIGUOUS_RECORD_BOUNDARY");
@@ -468,8 +484,8 @@
 
       if (!definition) {
         if (
-          startsUnknownBlock(lines, lineIndex) ||
-          hasRecognizedSectionAhead(lines, lineIndex + 1)
+          startsUnknownBlock(lines, lookahead, lineIndex) ||
+          hasRecognizedSectionAhead(lookahead, lineIndex + 1)
         ) {
           enterUnknownSection();
         } else if (line.includes(":") && !reportedInvalidSectionStart) {
@@ -479,7 +495,7 @@
         continue;
       }
 
-      if (!record && startsUnknownBlock(lines, lineIndex)) {
+      if (!record && startsUnknownBlock(lines, lookahead, lineIndex)) {
         enterUnknownSection();
         continue;
       }
@@ -487,7 +503,7 @@
       if (
         record &&
         isCompleteForBlankBoundary(record) &&
-        looksLikeUnknownSection(lines, lineIndex)
+        looksLikeUnknownSection(lines, lookahead, lineIndex)
       ) {
         enterUnknownSection();
         continue;

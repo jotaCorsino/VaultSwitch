@@ -521,3 +521,56 @@ test("removes at most one syntax space and preserves the remaining value exactly
   assert.equal(result.records[0].password, " leading:and:trailing  ");
   assert.equal(result.records[0].notes, " preserved  ");
 });
+
+test("blocks a large synthetic invalid preamble without repeated suffix scans", () => {
+  const lineCount = 50_000;
+  const source = bytes(Array.from(
+    { length: lineCount },
+    (_, index) => `Unrecognized field ${index}: FICTITIOUS-LARGE-INPUT`,
+  ).join("\n"));
+  const result = parseKasperskyTxtBytes(source);
+
+  assert.ok(source.byteLength < DEFAULT_MAX_BYTES);
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 0);
+  assert.equal(result.counts.unknownSections, 0);
+  assert.deepEqual(diagnosticCodes(result), ["INVALID_SECTION", "NO_SUPPORTED_RECORDS"]);
+  assert.doesNotMatch(JSON.stringify(result.diagnostics), /FICTITIOUS-LARGE-INPUT/u);
+});
+
+test("blocks many synthetic unknown blocks interleaved with valid records", () => {
+  const blockCount = 2_000;
+  const lines = [];
+
+  for (let index = 0; index < blockCount; index += 1) {
+    lines.push(
+      "Websites",
+      "",
+      `Website name: Synthetic ${index}`,
+      `Website URL: https://synthetic-${index}.example.invalid`,
+      `Login name: Synthetic account ${index}`,
+      `Login: synthetic-user-${index}`,
+      `Password: FICTITIOUS-PASSWORD-${index}`,
+      `Comment: Synthetic comment ${index}`,
+      "",
+      "---",
+      "",
+      `Unknown synthetic section ${index}`,
+      `Unknown field: FICTITIOUS-UNKNOWN-${index}`,
+      "",
+      "---",
+      "",
+    );
+  }
+
+  const source = bytes(lines.join("\n"));
+  const result = parseKasperskyTxtBytes(source);
+
+  assert.ok(source.byteLength < DEFAULT_MAX_BYTES);
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, blockCount);
+  assert.equal(result.counts.websites, blockCount);
+  assert.equal(result.counts.unknownSections, blockCount);
+  assert.equal(result.counts.diagnosticsByCode.UNKNOWN_SECTION, blockCount);
+  assert.doesNotMatch(JSON.stringify(result.diagnostics), /FICTITIOUS-UNKNOWN/u);
+});
