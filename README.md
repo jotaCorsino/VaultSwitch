@@ -4,11 +4,11 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 ## Acompanhamento do desenvolvimento
 
-**Fase atual:** INIT-001 — 🔵 Aguardando homologação
+**Fase atual:** BOOT-001 — ⚪ Planejado
 
 | Ordem | ID | Etapa | Status |
 | --- | --- | --- | --- |
-| 0 | INIT-001 | Fundação documental | 🔵 Aguardando homologação |
+| 0 | INIT-001 | Fundação documental | 🟢 Concluído (homologado) |
 | 1 | BOOT-001 | Bootstrap local | ⚪ Planejado |
 | 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | ⚪ Planejado |
 | 3 | PARSE-001 | Parser local do TXT do Kaspersky | ⚪ Planejado |
