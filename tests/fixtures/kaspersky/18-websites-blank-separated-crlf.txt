@@ -1,0 +1,15 @@
+Websites
+
+Website name: Estação Aurora Fictícia
+Website URL: https://aurora.example.invalid:7071/login
+Login name:
+Login: conta.aurora@example.invalid
+Password: FICTITIOUS-ONLY-AURORA
+Comment:
+
+Website name: Estação Boreal Fictícia
+Website URL: https://boreal.example.invalid/
+Login name:
+Login: boreal-user
+Password: FICTITIOUS-ONLY-BOREAL
+Comment: Comentário inteiramente inventado, teste.
