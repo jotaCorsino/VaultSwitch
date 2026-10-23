@@ -11,7 +11,7 @@
 
 ## INIT-001 — Fundação documental
 
-**Estado:** 🔵 Aguardando homologação
+**Estado:** 🟢 Concluído (homologado)
 
 ### Objetivo
 Registrar problema, escopo, arquitetura inicial, riscos, critérios de homologação e plano incremental antes da implementação.
