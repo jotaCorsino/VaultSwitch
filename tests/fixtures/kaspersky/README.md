@@ -26,7 +26,12 @@ Convenções de segurança:
 | `10-invalid-lf.txt` | UTF-8, LF | Negativo | Texto sem estrutura | Rejeitar sem registros suportados |
 | `11-windows-1252-hypothetical-crlf.txt` | Windows-1252, CRLF | Hipótese não verificada | Codificação alternativa | Rejeitar sem fallback silencioso |
 | `12-utf16le-hypothetical.txt` | UTF-16 LE com BOM, CRLF | Hipótese não verificada | BOM/codificação alternativa | Rejeitar como codificação não suportada |
+| `13-missing-required-field-negative-lf.txt` | UTF-8, LF | Negativo inventado | Registro conhecido sem o rótulo estrutural `Website name` | `MISSING_FIELD`; bloquear o registro |
+| `14-duplicate-field-negative-lf.txt` | UTF-8, LF | Negativo inventado | Registro conhecido com dois rótulos `Login` | `DUPLICATE_FIELD`; bloquear sem escolher valor |
+| `15-unknown-field-negative-lf.txt` | UTF-8, LF | Negativo inventado | Registro conhecido com `Invented field` | `UNKNOWN_FIELD`; preservar a ocorrência e bloquear |
+| `16-mixed-supported-unknown-negative-lf.txt` | UTF-8, LF | Negativo inventado | Website reconhecível seguido por seção/registro desconhecido | `UNKNOWN_SECTION`; bloquear o resultado global sem exportação parcial |
+| `17-comment-multiline-hypothetical-negative-lf.txt` | UTF-8, LF | Hipótese negativa inventada | `Comment` seguido por linha sem rótulo | `AMBIGUOUS_MULTILINE`; bloquear o registro |
 
 ## Observação sobre expectativas
 
-Não existe parser nesta tarefa. As expectativas acima são oráculos documentais para PARSE-001 depois que o contrato for homologado. Os testes da FMT-001 verificam apenas propriedades físicas dos arquivos, ausência de dados reais conhecidos e coerência com este inventário.
+Não existe parser nesta tarefa. As expectativas acima são oráculos documentais para PARSE-001 depois que o contrato for homologado. Os testes da FMT-001 verificam apenas propriedades físicas dos arquivos, ausência de dados reais conhecidos e coerência com este inventário. Todos os casos são inventados; os itens classificados como negativos foram desenhados para provocar bloqueio, não para representar saídas observadas do KPM.

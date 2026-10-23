@@ -217,6 +217,11 @@ Os diagnósticos devem conter apenas código, seção, índice do registro e nom
 | Texto sem estrutura | Negativo | `10-invalid-lf.txt` | `NO_SUPPORTED_RECORDS`. |
 | Windows-1252 com CRLF | Hipótese | `11-windows-1252-hypothetical-crlf.txt` | `INVALID_UTF8`/`ENCODING_UNSUPPORTED`; sem fallback. |
 | UTF-16 LE com BOM | Hipótese | `12-utf16le-hypothetical.txt` | `ENCODING_UNSUPPORTED`. |
+| Rótulo estrutural ausente em registro conhecido | Negativo inventado | `13-missing-required-field-negative-lf.txt` | `MISSING_FIELD`; bloquear o registro. Diferente de valor vazio. |
+| Rótulo duplicado em registro conhecido | Negativo inventado | `14-duplicate-field-negative-lf.txt` | `DUPLICATE_FIELD`; bloquear sem escolher valor. |
+| Rótulo desconhecido em registro conhecido | Negativo inventado | `15-unknown-field-negative-lf.txt` | `UNKNOWN_FIELD`; preservar a ocorrência como não interpretada e bloquear. |
+| Website reconhecível seguido por seção desconhecida | Negativo inventado | `16-mixed-supported-unknown-negative-lf.txt` | `UNKNOWN_SECTION`; bloquear o resultado global, inclusive o website reconhecido, sem exportação parcial implícita. |
+| `Comment` hipotético em múltiplas linhas | Hipótese negativa inventada | `17-comment-multiline-hypothetical-negative-lf.txt` | `AMBIGUOUS_MULTILINE`; bloquear o registro enquanto a gramática não estiver homologada. |
 
 O inventário detalhado está em [`tests/fixtures/kaspersky/README.md`](../tests/fixtures/kaspersky/README.md).
 
