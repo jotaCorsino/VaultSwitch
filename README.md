@@ -4,14 +4,14 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 ## Acompanhamento do desenvolvimento
 
-**Fase atual:** PARSE-001 — ⚪ Planejado
+**Fase atual:** PARSE-001 — 🔵 Aguardando homologação
 
 | Ordem | ID | Etapa | Status |
 | --- | --- | --- | --- |
 | 0 | INIT-001 | Fundação documental | 🟢 Concluído (homologado) |
 | 1 | BOOT-001 | Bootstrap local | 🟢 Concluído (homologado) |
 | 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | 🟢 Concluído (homologado) |
-| 3 | PARSE-001 | Parser local do TXT do Kaspersky | ⚪ Planejado |
+| 3 | PARSE-001 | Parser local do TXT do Kaspersky | 🔵 Aguardando homologação |
 | 4 | CSV-001 | Geração de CSV compatível com KeePassXC | ⚪ Planejado |
 | 5 | UI-001 | Interface moderna e fluxo de conversão | ⚪ Planejado |
 | 6 | QA-001 | Validação ponta a ponta no KeePassXC | ⚪ Planejado |
@@ -19,9 +19,9 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 **Legenda:** ⚪ Planejado · 🟡 Em implementação · 🔵 Em validação / aguardando homologação · 🟢 Concluído (homologado) · 🟠 Pausado.
 
-**Próxima tarefa:** [PARSE-001 — parser Kaspersky](docs/tarefas/PARSE-001.md)
+**Gate atual:** [PARSE-001 — parser Kaspersky](docs/tarefas/PARSE-001.md) aguardando homologação humana. CSV-001 não foi iniciado.
 
-**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Tarefa FMT-001](docs/tarefas/FMT-001.md) · [Contrato proposto](docs/06-CONTRATO-TXT-KASPERSKY.md) · [Evidências](docs/evidencias/FMT-001.md)
+**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Tarefa PARSE-001](docs/tarefas/PARSE-001.md) · [Contrato homologado](docs/06-CONTRATO-TXT-KASPERSKY.md) · [Parser](assets/js/kaspersky-parser.js) · [Evidências PARSE-001](docs/evidencias/PARSE-001.md)
 
 ## Problema / contexto
 

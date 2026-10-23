@@ -80,7 +80,7 @@ Este escopo **limitado** foi homologado pelo responsável humano em 23/10/2026 a
 Permanecem fora do suporte inicial:
 
 - rótulos traduzidos, inclusive PT-BR;
-- seção `Notes` e valores multilinha enquanto a fronteira exata não for homologada;
+- seção `Notes` e valores multilinha enquanto a fronteira exata não for homologada; a investigação está rastreada na [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6);
 - codificações Windows-1252, UTF-16 ou qualquer fallback heurístico;
 - tipos desconhecidos do cofre;
 - arquivos que misturem formatos ou contenham estrutura ambígua.
@@ -99,10 +99,13 @@ secao_apps      := "Applications" linhas_em_branco* registro_application*
 registro        := campos (separador_tracos | separador_branco | proxima_secao | EOF)
 separador_tracos := linha cujo conteúdo aparado é exatamente "---"
 separador_branco := linha(s) vazia(s) entre registro completo e proximo registro reconhecido
+proxima_secao   := cabecalho reconhecido quando não existe registro ativo
 campo           := rotulo ":" espaço_sintatico_opcional valor
 ```
 
 A linha em branco imediatamente após o cabeçalho `Websites` é layout, não um registro vazio. Na variante E7, cada registro possui seis campos e os blocos são separados por uma linha em branco; o último termina em EOF sem newline. Isso é **evidência do exemplo local**, não gramática oficial do produto. Se um bloco contiver conteúdo sem rótulo ou fronteira ambígua (como possíveis valores multilinha), a análise deve bloquear em vez de perder dados.
+
+Um cabeçalho `Websites` ou `Applications` encontrado enquanto ainda existe registro ativo, sem linha em branco ou `---` que o tenha finalizado, é ambíguo com conteúdo multiline e deve bloquear. O cabeçalho não pode, sozinho, truncar silenciosamente o registro anterior.
 
 Cabeçalhos e rótulos são comparados literalmente e com diferenciação entre maiúsculas/minúsculas no contrato V0. Relaxar essa regra exigirá evidência e teste próprios.
 
@@ -155,10 +158,12 @@ Descartar ou remapear automaticamente `Login name` não é permitido.
 - Linha(s) em branco também podem delimitar websites na variante E7, **apenas** se o bloco anterior estiver estruturalmente completo e o próximo começar com um rótulo estrutural ou seção reconhecida.
 - Não confundir a linha vazia após cabeçalho de seção com registro vazio; preservar um último registro completo mesmo quando o arquivo terminar sem newline.
 - `---` dentro de uma linha de valor não é delimitador.
-- Uma linha de continuação formada somente por `---` é ambígua; enquanto multiline não for homologado, o registro deve ser bloqueado.
+- Uma linha de continuação formada somente por `---` é lexicalmente idêntica ao delimitador e, sem uma gramática adicional, a intenção não pode ser determinada somente pelos bytes.
 - Linhas vazias fora de valores multilinha são layout ou fronteira, conforme contexto; não criam registros vazios.
-- A amostra E7 não comprova sintaxe de conteúdo multiline: continuação de `Comment`/`Notes` permanece bloqueada por ambiguidade.
+- A amostra E7 não comprova sintaxe de conteúdo multiline: esse conteúdo permanece fora do escopo e deve bloquear sempre que a ambiguidade for detectável.
 - Registros repetidos não devem ser deduplicados, agrupados ou fundidos automaticamente.
+
+A PARSE-001 mantém `---` isolado como delimitador para preservar o contrato homologado, mas não consegue detectar quando essa mesma linha era conteúdo de um `Comment` multiline. Esse risco residual está rastreado na [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6); até sua investigação, não se deve afirmar que multiline sempre bloqueia nem que a migração completa está protegida contra essa ambiguidade.
 
 O parser futuro não deve aplicar `trim()` indiscriminado a segredos ou notas. Qualquer normalização de espaços precisa distinguir sintaxe do exportador de conteúdo do usuário.
 
@@ -189,7 +194,7 @@ Sem implementar código nesta tarefa, PARSE-001 deverá seguir esta ordem:
 3. **Normalização de linhas:** CRLF/LF para LF, preservando conteúdo dos valores.
 4. **Detecção de idioma/variante:** procurar apenas cabeçalhos homologados; não traduzir por aproximação.
 5. **Detecção de seção:** iniciar contexto somente em cabeçalho conhecido.
-6. **Coleta de registro:** até separador de traços, linha(s) vazia(s) entre blocos completos com próximo registro reconhecido, próxima seção ou EOF. Linhas em branco isoladas ou conteúdo multiline ambíguo não permitem perda silenciosa.
+6. **Coleta de registro:** até separador de traços, linha(s) vazia(s) entre blocos completos com próximo registro reconhecido, próxima seção após fronteira comprovada ou EOF. Linhas em branco isoladas ou conteúdo multiline ambíguo não permitem perda silenciosa.
 7. **Leitura de campo:** separar somente no primeiro `:` e validar rótulo literal.
 8. **Validação estrutural:** detectar rótulo ausente, duplicado, desconhecido ou fora de seção.
 9. **Preservação:** manter ordem, campos vazios e metadados de origem; nunca deduplicar.

@@ -74,9 +74,11 @@ O arquivo real do usuário não deve ser enviado ao GitHub nem usado como fixtur
 
 ## PARSE-001 — Parser Kaspersky
 
-**Estado:** ⚪ Planejado
+**Estado:** 🔵 Aguardando homologação
 
 **Tarefa de implementação:** [docs/tarefas/PARSE-001.md](docs/tarefas/PARSE-001.md)
+
+**Entrega para revisão:** [parser](assets/js/kaspersky-parser.js) · [testes](tests/kaspersky-parser.test.js) · [evidências](docs/evidencias/PARSE-001.md)
 
 ### Objetivo
 Ler o arquivo localmente, detectar o formato e transformar registros suportados em objetos normalizados em memória.
