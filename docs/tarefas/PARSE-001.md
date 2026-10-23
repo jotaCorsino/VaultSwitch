@@ -6,7 +6,7 @@
 - **Repositório:** https://github.com/jotaCorsino/VaultSwitch
 - **Base esperada:** `main` com FMT-001 homologada, commit `7383bda959980d0daaf371cb670c15732b89ce6d`
 - **Método:** ÓRBITA — Planejar → Executar → Evidenciar → Homologar
-- **Estado:** aguardando homologação; implementação e validação técnica concluídas no Draft PR
+- **Estado:** concluído — homologado pelo responsável em 23/10/2026 para escopo V0 limitado; PR #5 integrado à `main` por squash (`81adacb3322f2f2878d0e0b1cc516792ec083c6c`). **Não autorizado para migração real**: Issue #6 pendente.
 
 ## Objetivo
 

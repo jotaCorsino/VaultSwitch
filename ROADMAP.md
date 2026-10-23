@@ -74,7 +74,9 @@ O arquivo real do usuário não deve ser enviado ao GitHub nem usado como fixtur
 
 ## PARSE-001 — Parser Kaspersky
 
-**Estado:** 🔵 Aguardando homologação
+**Estado:** 🟢 Concluído (homologado V0)
+
+**Homologação humana:** 23/10/2026. Revisão do HEAD `fa94e656beaa23014cf70384f5b10e3433473626`, 41/41 testes reportados pelo Codex e validações independentes com dados fictícios; [PR #5](https://github.com/jotaCorsino/VaultSwitch/pull/5) integrado por squash ao `main` no commit `81adacb3322f2f2878d0e0b1cc516792ec083c6c`. Escopo limitado; **a Issue #6 impede uso real antes de investigação e solução de `Comment` multilinha**.
 
 **Tarefa de implementação:** [docs/tarefas/PARSE-001.md](docs/tarefas/PARSE-001.md)
 
@@ -86,6 +88,7 @@ Ler o arquivo localmente, detectar o formato e transformar registros suportados 
 ### Saída normalizada prevista
 - tipo: website | application;
 - título;
+- `accountName` (Login name), distinto de `username`;
 - username;
 - password;
 - url;
@@ -99,6 +102,8 @@ Ler o arquivo localmente, detectar o formato e transformar registros suportados 
 
 **Estado:** ⚪ Planejado
 
+**Tarefa detalhada:** [docs/tarefas/CSV-001.md](docs/tarefas/CSV-001.md)
+
 ### Objetivo
 Serializar os registros normalizados em CSV robusto para o assistente de importação do KeePassXC.
 
@@ -108,7 +113,11 @@ Serializar os registros normalizados em CSV robusto para o assistente de importa
 - cabeçalho previsível;
 - colunas mapeáveis para Group, Title, Username, Password, URL e Notes;
 - nenhuma perda silenciosa de registro;
-- relatório de registros convertidos, ignorados e com avisos.
+- relatório seguro de registros convertidos e avisos; nada de logs contendo valores;
+- **bloqueio integral se `parseResult.blocked=true`**, mesmo havendo registros reconhecidos;
+- **bloqueio integral se `accountName` não vazio não tiver destino validado no KeePassXC**; a implementação CSV-001 V0 não deve descartar nem mesclar esse valor silenciosamente.
+
+**Gate:** a saída da CSV-001 ainda é experimental, gerada apenas com dados fictícios. Não implica compatibilidade ponta a ponta nem autoriza migrar dados reais.
 
 ---
 
@@ -169,3 +178,13 @@ Preparar uma versão estável do utilitário com instruções de uso e migraçã
 - guia Kaspersky → VaultSwitch → KeePassXC;
 - checklist de segurança;
 - registro de limitações conhecidas.
+
+---
+
+## REQ-COMMENT-001 — `Comment` multilinha (Issue #6)
+
+**Estado:** 🔴 Requisito bloqueante para uso real — [Issue #6](https://github.com/jotaCorsino/VaultSwitch/issues/6) aberta.
+
+A gramática da exportação do Kaspersky para comentários multiline e linhas isoladas `---` ainda não está comprovada. O parser V0 pode interpretar `---` como fronteira mesmo que a linha pertença ao comentário. O suporte **integral e sem perda** a `Comment` → `Notes` deverá ser investigado, implementado e homologado em tarefa separada antes de qualquer uso com cofre real, independentemente de CSV-001/UI-001 estarem prontas.
+
+A compatibilidade de `Login name` não vazio com o importador do KeePassXC também precisa de solução validada antes de afirmar migração integral.

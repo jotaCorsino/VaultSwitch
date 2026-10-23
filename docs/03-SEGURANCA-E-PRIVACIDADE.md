@@ -61,3 +61,9 @@ O CSV de saída contém segredos em texto claro. A interface e a documentação 
 O arquivo real de exportação não deve ser enviado para ChatGPT, GitHub, issues, PRs ou logs.
 
 Quando for necessário validar o formato real, o ideal é executar o VaultSwitch localmente. Caso seja necessário compartilhar estrutura para diagnóstico, deve ser criada uma amostra sanitizada com credenciais completamente fictícias.
+
+## Gate de liberação para uso real
+
+Mesmo com PARSE-001 homologada para o escopo V0, o processamento de cofres reais **não está autorizado como fluxo seguro** enquanto a [Issue #6 — `Comment` multiline](https://github.com/jotaCorsino/VaultSwitch/issues/6) permanecer em aberto. A linha isolada `---` pode ser confundida com texto de comentário e gerar truncamento sem diagnóstico. Nenhuma fase posterior deve afirmar ausência de perda silenciosa até essa lacuna ser investigada, corrigida e homologada.
+
+Na CSV-001, a ausência de destino homologado para `accountName` não vazio também deve bloquear exportação, e registros reconhecidos em resultados com `blocked=true` **não podem** ser serializados. Nenhum exemplo real do usuário deve ser utilizado em testes, relatório, fixture, prompt ou GitHub.
