@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; media-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'"
+    >
+    <meta name="color-scheme" content="light">
+    <title>VaultSwitch — conversão local experimental</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script defer src="assets/js/kaspersky-parser.js"></script>
+    <script defer src="assets/js/keepassxc-csv.js"></script>
+    <script defer src="assets/js/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="#conteudo" aria-label="VaultSwitch, início">
+          <span class="brand-mark" aria-hidden="true"><span></span></span>
+          <span class="brand-copy">
+            <strong>VaultSwitch</strong>
+            <small>Kaspersky TXT → KeePassXC CSV</small>
+          </span>
+        </a>
+        <span class="version-pill">UI-001 · V0 experimental</span>
+      </div>
+    </header>
+
+    <main id="conteudo" class="page-shell">
+      <section class="hero" aria-labelledby="page-title">
+        <div class="eyebrow">Conversão local · sem backend</div>
+        <h1 id="page-title">Converta uma fixture fictícia.<br><em>Sem sair deste navegador.</em></h1>
+        <p>
+          Um fluxo auditável para validar o contrato técnico do VaultSwitch. Nesta fase,
+          nenhum cofre real está autorizado.
+        </p>
+      </section>
+
+      <section class="critical-notice" aria-labelledby="critical-title">
+        <div class="notice-icon" aria-hidden="true">!</div>
+        <div>
+          <p class="notice-kicker">Gate de segurança ativo</p>
+          <h2 id="critical-title">Modo experimental — somente arquivos fictícios de teste</h2>
+          <p>
+            A Issue #6 permanece aberta: comentários multilinha que contenham uma linha
+            <code>---</code> podem ser truncados sem diagnóstico. Não use exportações reais,
+            mesmo quando a análise indicar sucesso.
+          </p>
+        </div>
+      </section>
+
+      <div class="workspace-grid">
+        <section id="workflow-panel" class="panel workflow-panel" aria-labelledby="workflow-title" aria-busy="false">
+          <div class="panel-heading">
+            <div>
+              <span class="section-number">01</span>
+              <p class="panel-kicker">Entrada controlada</p>
+              <h2 id="workflow-title">Selecione a fixture</h2>
+            </div>
+            <span class="local-chip"><span aria-hidden="true"></span>Processamento local</span>
+          </div>
+
+          <ol class="step-list" aria-label="Etapas do fluxo experimental">
+            <li class="is-current"><span>1</span>Selecionar</li>
+            <li><span>2</span>Analisar</li>
+            <li><span>3</span>Converter</li>
+            <li><span>4</span>Baixar</li>
+          </ol>
+
+          <fieldset class="consent-box">
+            <legend>Confirmação obrigatória</legend>
+            <label class="check-row" for="fictional-confirmation">
+              <input id="fictional-confirmation" type="checkbox">
+              <span class="custom-check" aria-hidden="true"></span>
+              <span>
+                Confirmo que usarei apenas uma fixture inteiramente fictícia,
+                sem credenciais ou dados pessoais reais.
+              </span>
+            </label>
+            <p id="consent-feedback" class="field-help" aria-live="polite">
+              A seleção permanece bloqueada até esta confirmação.
+            </p>
+          </fieldset>
+
+          <div id="drop-zone" class="drop-zone">
+            <input
+              id="source-file"
+              class="visually-hidden"
+              type="file"
+              accept=".txt,text/plain"
+              aria-describedby="file-help"
+              disabled
+            >
+            <div class="file-glyph" aria-hidden="true"><span>TXT</span></div>
+            <h3>Arraste o TXT fictício para cá</h3>
+            <p>ou escolha um arquivo local para validar pelos bytes</p>
+            <label class="button button-secondary" for="source-file">Escolher fixture TXT</label>
+            <p id="file-help" class="field-help">
+              Até 5 MiB · UTF-8 · o nome do arquivo nunca é exibido ou incluído no relatório
+            </p>
+          </div>
+
+          <div class="action-row">
+            <button id="convert-action" class="button button-primary" type="button" disabled>
+              Gerar CSV experimental
+            </button>
+            <button id="reset-action" class="button button-quiet" type="button" disabled>
+              Limpar e reiniciar
+            </button>
+          </div>
+        </section>
+
+        <aside class="panel status-panel" aria-labelledby="status-heading">
+          <div class="status-topline">
+            <span id="status-badge" class="status-badge status-idle">Aguardando</span>
+            <span class="pulse" aria-hidden="true"></span>
+          </div>
+          <div class="status-copy" role="status" aria-live="polite" aria-atomic="true">
+            <h2 id="status-heading">Pronto para uma fixture fictícia</h2>
+            <p id="status-message">Confirme o modo de teste para habilitar a seleção local.</p>
+          </div>
+
+          <dl class="metrics" aria-label="Contagens estruturais seguras">
+            <div>
+              <dt>Reconhecidos</dt>
+              <dd id="metric-recognized">0</dd>
+            </div>
+            <div>
+              <dt>Bloqueados</dt>
+              <dd id="metric-blocked">0</dd>
+            </div>
+            <div>
+              <dt>Problemas</dt>
+              <dd id="metric-problems">0</dd>
+            </div>
+            <div>
+              <dt>Avisos</dt>
+              <dd id="metric-warnings">0</dd>
+            </div>
+          </dl>
+
+          <div class="output-summary">
+            <span>Tamanho da saída</span>
+            <strong><span id="metric-output">0</span> bytes</strong>
+          </div>
+
+          <a
+            id="download-action"
+            class="button button-download is-disabled"
+            download="vaultswitch-fixture.csv"
+            aria-disabled="true"
+            tabindex="-1"
+          >
+            Baixar CSV fictício
+          </a>
+          <p class="download-warning">
+            O CSV é texto claro. Não abra em planilhas. O teste de importação no KeePassXC
+            pertence à QA-001 e ainda não foi executado.
+          </p>
+        </aside>
+      </div>
+
+      <section id="report-panel" class="panel report-panel" aria-labelledby="report-title" hidden>
+        <div class="panel-heading report-heading">
+          <div>
+            <span class="section-number">02</span>
+            <p class="panel-kicker">Diagnóstico por whitelist</p>
+            <h2 id="report-title">Relatório técnico seguro</h2>
+          </div>
+          <span class="safe-chip">Sem valores do cofre</span>
+        </div>
+
+        <div class="report-grid">
+          <div>
+            <h3>Diagnósticos estruturais</h3>
+            <ul id="diagnostic-list" class="diagnostic-list"></ul>
+          </div>
+          <div class="copy-area">
+            <label for="report-text">Texto permitido para suporte</label>
+            <textarea id="report-text" rows="12" readonly spellcheck="false"></textarea>
+            <button id="copy-report-action" class="button button-secondary" type="button" disabled>
+              Copiar relatório seguro
+            </button>
+            <p id="copy-feedback" class="field-help" aria-live="polite"></p>
+            <p class="manual-copy-hint">
+              Se a cópia automática falhar em <code>file://</code>, o texto será selecionado
+              para você copiar manualmente.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="security-strip" aria-labelledby="security-title">
+        <div>
+          <p class="panel-kicker">Princípios do protótipo</p>
+          <h2 id="security-title">O que esta interface não faz</h2>
+        </div>
+        <ul>
+          <li><span aria-hidden="true">01</span>Não envia dados para rede</li>
+          <li><span aria-hidden="true">02</span>Não persiste conteúdo localmente</li>
+          <li><span aria-hidden="true">03</span>Não permite ignorar bloqueios</li>
+          <li><span aria-hidden="true">04</span>Não autoriza cofres reais</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>VaultSwitch · Protótipo V0 governado pelo Método ÓRBITA</p>
+      <p>Issue #6 e mapeamento de <code>Login name</code> permanecem gates de produto.</p>
+    </footer>
+  </body>
+</html>
