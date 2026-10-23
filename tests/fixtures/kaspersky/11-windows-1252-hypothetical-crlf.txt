@@ -1,0 +1,10 @@
+Websites
+
+Website name: Portal Codificação Fictício
+Website URL: https://cp1252.example.invalid
+Login name: Perfil fictício
+Login: encoding@example.invalid
+Password: FICTITIOUS-CP1252
+Comment: Ação, café e informação são valores inteiramente inventados.
+
+---

@@ -4,13 +4,13 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 ## Acompanhamento do desenvolvimento
 
-**Fase atual:** FMT-001 — ⚪ Planejado
+**Fase atual:** PARSE-001 — ⚪ Planejado
 
 | Ordem | ID | Etapa | Status |
 | --- | --- | --- | --- |
 | 0 | INIT-001 | Fundação documental | 🟢 Concluído (homologado) |
 | 1 | BOOT-001 | Bootstrap local | 🟢 Concluído (homologado) |
-| 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | ⚪ Planejado |
+| 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | 🟢 Concluído (homologado) |
 | 3 | PARSE-001 | Parser local do TXT do Kaspersky | ⚪ Planejado |
 | 4 | CSV-001 | Geração de CSV compatível com KeePassXC | ⚪ Planejado |
 | 5 | UI-001 | Interface moderna e fluxo de conversão | ⚪ Planejado |
@@ -19,7 +19,7 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 **Legenda:** ⚪ Planejado · 🟡 Em implementação · 🔵 Em validação / aguardando homologação · 🟢 Concluído (homologado) · 🟠 Pausado.
 
-**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Próxima tarefa FMT-001](docs/tarefas/FMT-001.md)
+**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Tarefa FMT-001](docs/tarefas/FMT-001.md) · [Contrato proposto](docs/06-CONTRATO-TXT-KASPERSKY.md) · [Evidências](docs/evidencias/FMT-001.md)
 
 ## Problema / contexto
 
@@ -115,6 +115,8 @@ Detalhes: [docs/03-SEGURANCA-E-PRIVACIDADE.md](docs/03-SEGURANCA-E-PRIVACIDADE.m
 - [Segurança e privacidade](docs/03-SEGURANCA-E-PRIVACIDADE.md)
 - [Formatos e compatibilidade](docs/04-FORMATOS-E-COMPATIBILIDADE.md)
 - [Critérios de homologação](docs/05-HOMOLOGACAO.md)
+- [Contrato proposto do TXT do Kaspersky](docs/06-CONTRATO-TXT-KASPERSKY.md)
+- [Evidências da FMT-001](docs/evidencias/FMT-001.md)
 
 ## Método ÓRBITA
 

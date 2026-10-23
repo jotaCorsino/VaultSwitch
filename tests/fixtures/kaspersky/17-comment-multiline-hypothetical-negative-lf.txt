@@ -1,0 +1,11 @@
+Websites
+
+Website name: Portal Comentário Multilinha Fictício
+Website URL: https://multiline-comment.example.invalid
+Login name: Perfil multiline fictício
+Login: multiline-fictitious-user
+Password: FICTITIOUS-MULTILINE-COMMENT
+Comment: Primeira linha inventada de um comentário hipotético.
+Segunda linha inventada sem rótulo; sua fronteira não está homologada.
+
+---

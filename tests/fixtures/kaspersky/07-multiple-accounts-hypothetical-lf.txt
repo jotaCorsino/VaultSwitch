@@ -1,0 +1,19 @@
+Websites
+
+Website name: Portal Compartilhado Fictício
+Website URL: https://multi.example.invalid
+Login name: Perfil A fictício
+Login: conta.a@example.invalid
+Password: FICTITIOUS-MULTI-A
+Comment: Primeira conta inventada.
+
+---
+
+Website name: Portal Compartilhado Fictício
+Website URL: https://multi.example.invalid
+Login name: Perfil B fictício
+Login: conta.b@example.invalid
+Password: FICTITIOUS-MULTI-B
+Comment: Segunda conta inventada.
+
+---

@@ -48,9 +48,13 @@ Nenhuma funcionalidade deve ser implementada nessa tarefa.
 
 ## FMT-001 — Contrato do formato Kaspersky
 
-**Estado:** ⚪ Planejado
+**Estado:** 🟢 Concluído (homologado)
+
+**Homologação humana:** 23/10/2026 — após revisão técnica e entrega de exemplo local de exportação, o responsável autorizou a continuidade. Homologação limitada ao contrato documentado, incluindo a variante observada com blocos separados por linhas em branco. **Não** significa compatibilidade total com todas as versões, idiomas, notas ou aplicações.
 
 **Tarefa detalhada:** [docs/tarefas/FMT-001.md](docs/tarefas/FMT-001.md)
+
+**Entrega para revisão:** [contrato técnico](docs/06-CONTRATO-TXT-KASPERSKY.md) · [fixtures fictícias](tests/fixtures/kaspersky/README.md) · [evidências](docs/evidencias/FMT-001.md)
 
 ### Objetivo
 Definir e testar o contrato de parsing do TXT exportado pelo Kaspersky Password Manager antes de implementar a conversão completa.

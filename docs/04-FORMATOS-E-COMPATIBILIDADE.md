@@ -21,6 +21,8 @@ Referência:
 
 O VaultSwitch não reutilizará o código dessa implementação. O contrato será reimplementado e validado com fixtures próprias.
 
+Resultado da investigação FMT-001, ainda aguardando homologação: [Contrato do TXT do Kaspersky Password Manager](06-CONTRATO-TXT-KASPERSKY.md).
+
 ## Ponto ainda não homologado
 
 O formato TXT é voltado a impressão e pode variar por versão, idioma e conteúdo. Portanto, FMT-001 deve validar:
