@@ -203,4 +203,4 @@ A revisão final demonstrou que linhas exatamente iguais a `Websites` ou `Applic
 
 ## 10. Gate
 
-PARSE-001 permanece **Aguardando homologação**. O PR deve continuar em Draft. Nenhum merge foi realizado e CSV-001 não foi iniciado.
+PARSE-001 **homologada pelo responsável para o escopo V0 limitado em 23/10/2026**. O [PR #5](https://github.com/jotaCorsino/VaultSwitch/pull/5) foi integrado à `main` por squash em `81adacb3322f2f2878d0e0b1cc516792ec083c6c`. A homologação **não** resolve o risco de `Comment` multiline com `---` isolado; [Issue #6](https://github.com/jotaCorsino/VaultSwitch/issues/6) permanece bloqueante para o uso real. CSV-001 somente preparada, sem implementação nesta fase.
