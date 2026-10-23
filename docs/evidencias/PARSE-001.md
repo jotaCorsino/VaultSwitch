@@ -6,7 +6,8 @@
 **Base sincronizada:** `main` em `edc16347f5a25ae26bab554202cd4ebda2b09778`<br>
 **Commit de implementação:** `c65949119b79d86643dffe5788fffd9a006cc8de`<br>
 **Correção após revisão técnica:** `1bb6ca5709ed5ed594c62432a27604b1b6acef28`<br>
-**Correção de desempenho:** `4ba222ac9b29eee9a2613f4d516a284d9b4b841d`
+**Correção de desempenho:** `4ba222ac9b29eee9a2613f4d516a284d9b4b841d`<br>
+**Mitigação final de segurança:** `d14526d163ce0621c94f2983714182640e74362c`
 
 ## 1. Escopo executado
 
@@ -14,7 +15,7 @@
 - consulta ao fluxo, governança, Git/GitHub e segurança do Método ÓRBITA;
 - implementação de parser JavaScript puro e independente de DOM em `assets/js/kaspersky-parser.js`;
 - testes nativos do Node.js em `tests/kaspersky-parser.test.js`, sem dependências de terceiros;
-- cobertura das 18 fixtures fictícias e de 20 cenários adicionais de borda, segurança e desempenho;
+- cobertura das 18 fixtures fictícias e de 23 cenários adicionais de borda, segurança e desempenho;
 - nenhuma implementação de CSV, interface, armazenamento, telemetria ou chamadas de rede;
 - nenhum uso, leitura ou cópia do arquivo real do usuário.
 
@@ -104,7 +105,10 @@ Foram cobertos também:
 - seção desconhecida vazia entre duas seções válidas separada por linhas em branco;
 - preservação de espaços e dois-pontos após o espaço sintático;
 - preâmbulo inválido sintético com 50.000 linhas, abaixo do limite padrão, sem varreduras repetidas de sufixo;
-- 2.000 blocos desconhecidos sintéticos intercalados com 2.000 registros válidos, preservando bloqueio, contagens e ausência de vazamento nos diagnósticos.
+- 2.000 blocos desconhecidos sintéticos intercalados com 2.000 registros válidos, preservando bloqueio, contagens e ausência de vazamento nos diagnósticos;
+- continuação fictícia de `Comment` formada exatamente por `Websites`, sem fronteira comprovada, bloqueada como `AMBIGUOUS_MULTILINE`;
+- continuação fictícia de `Comment` formada exatamente por `Applications`, sem fronteira comprovada, bloqueada como `AMBIGUOUS_MULTILINE`;
+- transição positiva para nova seção após linha em branco e registro completo, preservando a fronteira homologada.
 
 ## 6. Execução técnica
 
@@ -119,11 +123,11 @@ node --test --experimental-test-coverage tests\kaspersky-parser.test.js
 Resultado final:
 
 ```text
-tests:   38
-pass:    38
+tests:   41
+pass:    41
 fail:    0
-linhas:  99,09%
-branches: 97,52%
+linhas:  98,76%
+branches: 97,01%
 funções: 100,00%
 ```
 
@@ -153,6 +157,8 @@ Após o pré-cálculo dos lookaheads, cinco execuções por tamanho, com aquecim
 
 Os números são indicativos desta máquina e não são um benchmark portável. Nenhum valor exato de tempo é usado como gate automatizado. A evidência relevante é a remoção das varreduras de sufixo do loop principal, o crescimento aproximadamente proporcional à entrada e a execução funcional das entradas grandes na suíte.
 
+Após a mitigação final de segurança, a mesma verificação com cinco execuções e mediana manteve o perfil aproximadamente linear: 3,57 ms, 7,95 ms, 15,54 ms e 28,30 ms para 8.000, 16.000, 32.000 e 64.000 linhas, respectivamente. Esses valores também são apenas observacionais.
+
 ## 7. Verificações de segurança
 
 - busca estática por `fetch`, `XMLHttpRequest`, `WebSocket`, `sendBeacon`, `localStorage`, `sessionStorage`, `indexedDB` e `console.*`: nenhuma ocorrência no parser ou nos testes;
@@ -180,10 +186,12 @@ Após a primeira correção, a suíte completa passou em 36/36 testes.
 
 A revisão adicional reproduziu crescimento próximo de O(n²) em conteúdo inválido sem seção suportada. A causa era a combinação de três lookaheads que percorriam linhas futuras durante o loop principal: próxima linha não vazia, próxima seção reconhecida e próxima evidência de seção desconhecida. A correção de desempenho passou a construir três índices `Int32Array` em uma única passagem reversa e a consultar cada posição em O(1), sem alterar os estados, diagnósticos ou regras de reconhecimento. Dois testes sintéticos grandes foram acrescentados sem limiar de tempo dependente de hardware. Após a correção, a suíte completa passou em 38/38 testes.
 
+A revisão final demonstrou que linhas exatamente iguais a `Websites` ou `Applications` imediatamente após `Comment` eram aceitas como nova seção, mesmo sem fronteira estrutural, permitindo truncamento silencioso. As duas regressões foram adicionadas primeiro e reproduziram o problema em 39/41 testes. A mitigação agora emite `AMBIGUOUS_MULTILINE` quando um cabeçalho reconhecido aparece com registro ativo; após linha em branco, a transição só é aceita se o registro anterior estiver completo. A suíte final passou em 41/41 testes e o perfil O(n) foi preservado.
+
 ## 9. Limitações e riscos residuais
 
 1. O suporte permanece limitado a rótulos ingleses e às duas variantes de fronteira homologadas.
-2. `Notes` e conteúdo multiline continuam bloqueados; nenhuma heurística tenta recuperá-los.
+2. `Notes` e conteúdo multiline reconhecível como ambíguo continuam bloqueados; nenhuma heurística tenta recuperar ou concatenar valores.
 3. Windows-1252, UTF-16 e outros fallbacks não são suportados.
 4. Uma única observação local fundamenta a variante de linha em branco; isso não demonstra compatibilidade geral com o KPM.
 5. Quando `blocked=true`, registros reconhecidos podem permanecer em `records` para inspeção/contagem em memória. Qualquer consumidor futuro deve respeitar obrigatoriamente o gate e não exportá-los parcialmente.
@@ -191,6 +199,7 @@ A revisão adicional reproduziu crescimento próximo de O(n²) em conteúdo inv�
 7. Testes automatizados não comprovam ausência de vulnerabilidades nem compatibilidade com exportações reais não avaliadas.
 8. Conteúdo sem rótulo e sem fronteira/evidência estrutural suficiente pode permanecer classificado como `AMBIGUOUS_MULTILINE` em vez de `UNKNOWN_SECTION`; ambos bloqueiam globalmente e nenhum conteúdo é descartado silenciosamente.
 9. O pré-cálculo usa três vetores de índices com memória O(n) no número de linhas. O limite configurável de bytes restringe a entrada, mas o consumo total em memória também inclui texto decodificado, linhas e índices.
+10. Uma linha de continuação de `Comment` exatamente igual a `---` é indistinguível do delimitador pela gramática atualmente homologada e ainda pode encerrar o registro sem bloqueio. A investigação [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6) é necessária antes de afirmar preservação geral de comentários multiline ou segurança para migração completa.
 
 ## 10. Gate
 
