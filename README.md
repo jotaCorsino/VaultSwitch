@@ -4,14 +4,14 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 ## Acompanhamento do desenvolvimento
 
-**Fase atual:** PARSE-001 — 🔵 Aguardando homologação
+**Fase atual:** CSV-001 — ⚪ Planejado
 
 | Ordem | ID | Etapa | Status |
 | --- | --- | --- | --- |
 | 0 | INIT-001 | Fundação documental | 🟢 Concluído (homologado) |
 | 1 | BOOT-001 | Bootstrap local | 🟢 Concluído (homologado) |
 | 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | 🟢 Concluído (homologado) |
-| 3 | PARSE-001 | Parser local do TXT do Kaspersky | 🔵 Aguardando homologação |
+| 3 | PARSE-001 | Parser local do TXT do Kaspersky | 🟢 Concluído (homologado V0) |
 | 4 | CSV-001 | Geração de CSV compatível com KeePassXC | ⚪ Planejado |
 | 5 | UI-001 | Interface moderna e fluxo de conversão | ⚪ Planejado |
 | 6 | QA-001 | Validação ponta a ponta no KeePassXC | ⚪ Planejado |
@@ -19,9 +19,11 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 **Legenda:** ⚪ Planejado · 🟡 Em implementação · 🔵 Em validação / aguardando homologação · 🟢 Concluído (homologado) · 🟠 Pausado.
 
-**Gate atual:** [PARSE-001 — parser Kaspersky](docs/tarefas/PARSE-001.md) aguardando homologação humana. CSV-001 não foi iniciado.
+**Próxima tarefa:** [CSV-001 — serializador KeePassXC](docs/tarefas/CSV-001.md), preparada para o Codex e ainda não executada.
 
-**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Tarefa PARSE-001](docs/tarefas/PARSE-001.md) · [Contrato homologado](docs/06-CONTRATO-TXT-KASPERSKY.md) · [Parser](assets/js/kaspersky-parser.js) · [Evidências PARSE-001](docs/evidencias/PARSE-001.md)
+**Gate de uso real:** [Issue #6 — `Comment` multilinha](https://github.com/jotaCorsino/VaultSwitch/issues/6) continua aberta e **bloqueia a declaração de segurança para migração real**, mesmo com PARSE-001 homologada. `Login name` não vazio também não pode ser perdido na importação.
+
+**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Tarefa CSV-001](docs/tarefas/CSV-001.md) · [Tarefa PARSE-001](docs/tarefas/PARSE-001.md) · [Contrato homologado](docs/06-CONTRATO-TXT-KASPERSKY.md) · [Parser](assets/js/kaspersky-parser.js) · [Evidências PARSE-001](docs/evidencias/PARSE-001.md)
 
 ## Problema / contexto
 
