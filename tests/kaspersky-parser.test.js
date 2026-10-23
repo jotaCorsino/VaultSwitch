@@ -574,3 +574,52 @@ test("blocks many synthetic unknown blocks interleaved with valid records", () =
   assert.equal(result.counts.diagnosticsByCode.UNKNOWN_SECTION, blockCount);
   assert.doesNotMatch(JSON.stringify(result.diagnostics), /FICTITIOUS-UNKNOWN/u);
 });
+
+for (const sectionLikeCommentLine of ["Websites", "Applications"]) {
+  test(`blocks ${sectionLikeCommentLine} after Comment without a proven boundary`, () => {
+    const commentValue = "FICTITIOUS-COMMENT-FIRST-LINE";
+    const result = parseKasperskyTxtBytes(bytes([
+      "Websites",
+      "",
+      "Website name: Section-like Comment Fictício",
+      "Website URL: https://section-like-comment.example.invalid",
+      "Login name: Synthetic account",
+      "Login: synthetic-user",
+      "Password: FICTITIOUS-PASSWORD",
+      `Comment: ${commentValue}`,
+      sectionLikeCommentLine,
+    ].join("\n")));
+
+    assert.equal(result.blocked, true);
+    assert.equal(result.records.length, 0);
+    assert.equal(result.counts.blockedRecords, 1);
+    assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+    assert.doesNotMatch(JSON.stringify(result.diagnostics), new RegExp(commentValue, "u"));
+  });
+}
+
+test("accepts a recognized section after a complete blank-delimited record", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Before Section Boundary Fictício",
+    "Website URL: https://before-section-boundary.example.invalid",
+    "Login name: Synthetic website account",
+    "Login: synthetic-website-user",
+    "Password: FICTITIOUS-WEBSITE-PASSWORD",
+    "Comment: Synthetic website comment",
+    "",
+    "Applications",
+    "",
+    "Application: After Section Boundary Fictício",
+    "Login name: Synthetic application account",
+    "Login: synthetic-application-user",
+    "Password: FICTITIOUS-APPLICATION-PASSWORD",
+    "Comment: Synthetic application comment",
+  ].join("\n")));
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.counts.websites, 1);
+  assert.equal(result.counts.applications, 1);
+});

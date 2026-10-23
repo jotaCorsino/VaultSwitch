@@ -422,6 +422,11 @@
       const line = lines[lineIndex];
 
       if (RECOGNIZED_SECTION_SET.has(line)) {
+        if (record && record.hasContent) {
+          reportRecordError("AMBIGUOUS_MULTILINE");
+          continue;
+        }
+
         enterRecognizedSection(line);
         continue;
       }
@@ -465,6 +470,14 @@
         if (
           nextLine !== undefined &&
           lineUsesField(nextLine.line, definition.structuralField)
+        ) {
+          if (!isCompleteForBlankBoundary(record)) {
+            reportRecordError("AMBIGUOUS_RECORD_BOUNDARY");
+          }
+          finalizeRecord();
+        } else if (
+          nextLine !== undefined &&
+          RECOGNIZED_SECTION_SET.has(nextLine.line)
         ) {
           if (!isCompleteForBlankBoundary(record)) {
             reportRecordError("AMBIGUOUS_RECORD_BOUNDARY");
