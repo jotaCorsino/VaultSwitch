@@ -4,13 +4,13 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 ## Acompanhamento do desenvolvimento
 
-**Fase atual:** FMT-001 — 🔵 Aguardando homologação
+**Fase atual:** PARSE-001 — ⚪ Planejado
 
 | Ordem | ID | Etapa | Status |
 | --- | --- | --- | --- |
 | 0 | INIT-001 | Fundação documental | 🟢 Concluído (homologado) |
 | 1 | BOOT-001 | Bootstrap local | 🟢 Concluído (homologado) |
-| 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | 🔵 Aguardando homologação |
+| 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | 🟢 Concluído (homologado) |
 | 3 | PARSE-001 | Parser local do TXT do Kaspersky | ⚪ Planejado |
 | 4 | CSV-001 | Geração de CSV compatível com KeePassXC | ⚪ Planejado |
 | 5 | UI-001 | Interface moderna e fluxo de conversão | ⚪ Planejado |
