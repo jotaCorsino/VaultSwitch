@@ -1,0 +1,17 @@
+# Dados sensíveis locais
+/private/
+/local-data/
+/tests/private/
+
+# Bancos e exports reais
+*.kdbx
+*.kdb
+*.edb
+*_REAL_EXPORT.*
+real-export.*
+
+# Arquivos temporários do SO/editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
