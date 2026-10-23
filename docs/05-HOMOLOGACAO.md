@@ -29,15 +29,20 @@ Homologar somente quando:
 - erros e avisos não vazam segredos;
 - parser e gerador passam pelos testes definidos.
 
-## UI-001
+## UI-001 — protótipo experimental com dados fictícios
 
 Homologar somente quando:
 
-- fluxo de seleção → validação → conversão → download é claro;
-- senhas não aparecem por padrão;
-- interface não depende de internet;
-- nenhuma requisição externa é necessária;
-- erros são compreensíveis sem revelar conteúdo sensível.
+- fluxo de seleção → validação → conversão → download **de teste fictício** é claro e não permite ignorar bloqueios do parser/CSV;
+- avisos de **Issue #6 aberta e proibição de uso com cofres reais** são explícitos; nenhuma frase sugere segurança completa de migração;
+- senhas, logins, títulos, URLs, nomes de arquivo e comentários não aparecem na interface ou no relatório técnico;
+- a aplicação funciona offline e diretamente em `file://`, sem CDN e sem requisições externas;
+- códigos de erro, registros/contagens e avisos aparecem de modo compreensível, sem conteúdo sensível;
+- **copiar relatório** fornece só metadados de whitelist, com alternativa de seleção manual se Clipboard API não estiver disponível;
+- não inventa linhas do TXT inexistentes no diagnóstico do parser V0;
+- limpa estado anterior/URLs temporárias e impede download caso `parseResult.blocked` ou `csvResult.blocked`;
+- testes exclusivamente fictícios, revisão de XSS e acessibilidade básicos concluídos;
+- teste técnico aprovado não autoriza uso com cofre real nem encerra a Issue #6.
 
 ## QA-001 — Migração ponta a ponta
 

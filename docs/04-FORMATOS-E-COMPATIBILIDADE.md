@@ -45,7 +45,7 @@ Referências oficiais:
 - https://keepassxc.org/docs/KeePassXC_UserGuide
 - https://keepassxc.org/docs/KeePassXC_GettingStarted
 
-A saída **inicial e experimental** da CSV-001 seguirá seis colunas mapeáveis, a serem validadas pelo assistente do KeePassXC em QA-001:
+A CSV-001 **implementada e homologada apenas como V0 experimental** produz seis colunas, cuja importação e mapeamento no KeePassXC seguem sem validação ponta a ponta (QA-001):
 
 ```csv
 Group,Title,Username,Password,URL,Notes

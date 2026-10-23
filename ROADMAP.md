@@ -100,11 +100,13 @@ Ler o arquivo localmente, detectar o formato e transformar registros suportados 
 
 ## CSV-001 — Gerador KeePassXC
 
-**Estado:** 🔵 Aguardando homologação
+**Estado:** 🟢 Concluído (homologado V0 experimental)
+
+**Homologação humana:** 23/10/2026. [PR #8](https://github.com/jotaCorsino/VaultSwitch/pull/8) integrado por squash em `main@8fe4bb14255f977e930d8fce6f5f2023206d2b02`, após parecer favorável para o escopo V0; 77/77 testes reportados pelo Codex e 13 verificações independentes sintéticas. **Não** certifica compatibilidade integral com importador KeePassXC nem autoriza uso com cofre real.
 
 **Tarefa detalhada:** [docs/tarefas/CSV-001.md](docs/tarefas/CSV-001.md)
 
-**Entrega para revisão:** [serializador](assets/js/keepassxc-csv.js) · [testes](tests/keepassxc-csv.test.js) · [evidências](docs/evidencias/CSV-001.md) · [Draft PR #8](https://github.com/jotaCorsino/VaultSwitch/pull/8)
+**Entrega para revisão:** [serializador](assets/js/keepassxc-csv.js) · [testes](tests/keepassxc-csv.test.js) · [evidências](docs/evidencias/CSV-001.md) · [PR #8 (mesclado)](https://github.com/jotaCorsino/VaultSwitch/pull/8)
 
 ### Objetivo
 Serializar os registros normalizados em CSV robusto para o assistente de importação do KeePassXC.
@@ -127,6 +129,10 @@ Serializar os registros normalizados em CSV robusto para o assistente de importa
 
 **Estado:** ⚪ Planejado
 
+**Tarefa detalhada:** [docs/tarefas/UI-001.md](docs/tarefas/UI-001.md)
+
+**Limite do escopo:** protótipo V0 apenas para testes fictícios, sem release/utilização com cofres reais enquanto a Issue #6 estiver aberta; sem forçar exportação bloqueada. Incorporar relatório de diagnóstico copiável apenas com metadados estruturais seguros, nunca com dados de credenciais.
+
 ### Objetivo
 Criar uma interface moderna, simples e segura para selecionar, validar, converter e baixar o arquivo.
 
@@ -136,7 +142,8 @@ Criar uma interface moderna, simples e segura para selecionar, validar, converte
 3. mostrar apenas metadados seguros por padrão;
 4. converter;
 5. baixar CSV;
-6. orientar importação e descarte seguro do CSV.
+6. orientar importação e descarte seguro do CSV;
+7. permitir copiar **somente relatório técnico seguro**, com diagnóstico codificado e sem conteúdo do cofre.
 
 ### Restrições
 - sem framework;
