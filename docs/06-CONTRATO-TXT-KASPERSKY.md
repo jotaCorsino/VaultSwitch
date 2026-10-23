@@ -1,7 +1,7 @@
 # 06 — Contrato do TXT do Kaspersky Password Manager
 
 **Tarefa:** FMT-001<br>
-**Estado:** candidato em validação; ainda não homologado<br>
+**Estado:** homologado em 23/10/2026 para escopo restrito; compatibilidade com todas as variantes do KPM não declarada<br>
 **Escopo:** especificação de leitura, sem parser de produção
 
 ## 1. Objetivo e limite de confiança
@@ -75,7 +75,7 @@ O suporte inicial candidato fica limitado a:
 - valores vazios explícitos, sem inventar substitutos;
 - preservação da ordem dos registros e dos caracteres do valor.
 
-Este escopo é uma proposta de suporte limitado baseada em evidência secundária. Só se torna contrato homologado após aprovação humana.
+Este escopo **limitado** foi homologado pelo responsável humano em 23/10/2026 após complementar a investigação com uma amostra local (E7). Websites com rótulos ingleses e separação por linhas em branco foram observados diretamente em uma única amostra; Applications e separador `---` continuam amparados apenas em evidência secundária.
 
 Permanecem fora do suporte inicial:
 
@@ -250,4 +250,4 @@ PARSE-001 só deve começar depois de homologação humana deste contrato e das 
 5. manter desconhecidos e perdas potenciais como bloqueio contabilizado;
 6. usar apenas fixtures fictícias; nenhuma exportação real pode entrar no repositório, em logs ou em prompts.
 
-Até essas condições serem satisfeitas, esta especificação permanece evidência de investigação, não declaração de compatibilidade.
+**Decisão de planejamento de 23/10/2026:** autorizada a preparação de PARSE-001 com rótulos ingleses de `Websites`/`Applications`, as duas variantes de delimitador documentadas, `accountName` separado de `username`, UTF-8 estrito (BOM opcional), bloqueio de `Notes`/multiline e bloqueio global para dados desconhecidos. Nenhum dado sensível da amostra será integrado ao projeto. O contrato homologado é o ponto de partida dos testes, **não** certificação de migração completa de um cofre real.
