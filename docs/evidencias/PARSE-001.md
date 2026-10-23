@@ -4,7 +4,8 @@
 **Data da execução:** 23/10/2026<br>
 **Branch:** `feat/PARSE-001-parser`<br>
 **Base sincronizada:** `main` em `edc16347f5a25ae26bab554202cd4ebda2b09778`<br>
-**Commit de implementação:** `c65949119b79d86643dffe5788fffd9a006cc8de`
+**Commit de implementação:** `c65949119b79d86643dffe5788fffd9a006cc8de`<br>
+**Correção após revisão técnica:** `1bb6ca5709ed5ed594c62432a27604b1b6acef28`
 
 ## 1. Escopo executado
 
@@ -12,7 +13,7 @@
 - consulta ao fluxo, governança, Git/GitHub e segurança do Método ÓRBITA;
 - implementação de parser JavaScript puro e independente de DOM em `assets/js/kaspersky-parser.js`;
 - testes nativos do Node.js em `tests/kaspersky-parser.test.js`, sem dependências de terceiros;
-- cobertura das 18 fixtures fictícias e de 14 cenários adicionais de borda/segurança;
+- cobertura das 18 fixtures fictícias e de 18 cenários adicionais de borda/segurança;
 - nenhuma implementação de CSV, interface, armazenamento, telemetria ou chamadas de rede;
 - nenhum uso, leitura ou cópia do arquivo real do usuário.
 
@@ -95,6 +96,10 @@ Foram cobertos também:
 - tipo de entrada de API inválido sem eco do conteúdo;
 - duplicidade de campo sensível sem exposição dos valores;
 - esquema seguro de diagnósticos para todas as 18 fixtures;
+- cabeçalho desconhecido vazio antes da primeira seção suportada;
+- preâmbulo desconhecido com duas linhas sem `:` antes de seção suportada;
+- seção desconhecida entre duas seções válidas após `---`;
+- seção desconhecida vazia entre duas seções válidas separada por linhas em branco;
 - preservação de espaços e dois-pontos após o espaço sintático.
 
 ## 6. Execução técnica
@@ -110,11 +115,11 @@ node --test --experimental-test-coverage tests\kaspersky-parser.test.js
 Resultado final:
 
 ```text
-tests:   32
-pass:    32
+tests:   36
+pass:    36
 fail:    0
-linhas:  98,75%
-branches: 97,01%
+linhas:  98,69%
+branches: 97,47%
 funções: 100,00%
 ```
 
@@ -130,9 +135,20 @@ funções: 100,00%
 - nenhum arquivo real, credencial real ou amostra sensível foi usado;
 - não é prometida limpeza criptográfica da memória JavaScript.
 
-## 8. Ocorrência durante a implementação
+## 8. Ocorrências durante a implementação e revisão
 
-A primeira execução obteve 29/30 testes: na fixture `16`, um cabeçalho desconhecido após `---` era classificado como `AMBIGUOUS_MULTILINE`. A transição foi corrigida para `UNKNOWN_SECTION`, mantendo o registro reconhecido em memória e `blocked=true` no resultado global. As execuções finais passaram em 32/32 testes.
+A primeira execução da implementação obteve 29/30 testes: na fixture `16`, um cabeçalho desconhecido após `---` era classificado como `AMBIGUOUS_MULTILINE`. A transição foi corrigida para `UNKNOWN_SECTION`, mantendo o registro reconhecido em memória e `blocked=true` no resultado global.
+
+A revisão técnica do PR #5 identificou que conteúdo sem `:` antes de uma seção válida ainda era ignorado e que uma seção desconhecida vazia entre registros separados por linha em branco podia consumir o registro anterior. As quatro regressões solicitadas foram adicionadas primeiro; antes da correção, o resultado foi 33/36, com três falhas que reproduziram esses desvios.
+
+A correção passou a:
+
+- contabilizar como um único `UNKNOWN_SECTION` qualquer bloco desconhecido que anteceda uma próxima seção suportada;
+- não reproduzir o cabeçalho ou conteúdo desconhecido nos diagnósticos;
+- finalizar com segurança o registro completo anterior quando uma fronteira em branco antecede bloco desconhecido estruturalmente identificável;
+- preservar os registros válidos anteriores/posteriores em memória, mantendo obrigatoriamente `blocked=true` no resultado global.
+
+Após a correção, a suíte completa passou em 36/36 testes.
 
 ## 9. Limitações e riscos residuais
 
@@ -143,6 +159,7 @@ A primeira execução obteve 29/30 testes: na fixture `16`, um cabeçalho descon
 5. Quando `blocked=true`, registros reconhecidos podem permanecer em `records` para inspeção/contagem em memória. Qualquer consumidor futuro deve respeitar obrigatoriamente o gate e não exportá-los parcialmente.
 6. O limite de 5 MiB é um default de proteção, não um limite documentado do KPM; o chamador pode configurá-lo conscientemente.
 7. Testes automatizados não comprovam ausência de vulnerabilidades nem compatibilidade com exportações reais não avaliadas.
+8. Conteúdo sem rótulo e sem fronteira/evidência estrutural suficiente pode permanecer classificado como `AMBIGUOUS_MULTILINE` em vez de `UNKNOWN_SECTION`; ambos bloqueiam globalmente e nenhum conteúdo é descartado silenciosamente.
 
 ## 10. Gate
 
