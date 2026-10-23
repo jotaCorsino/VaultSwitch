@@ -70,6 +70,7 @@ Cada entrada deve convergir para uma estrutura equivalente a:
 ```text
 type
 title
+accountName  # Login name (não confundir com username)
 username
 password
 url
@@ -86,10 +87,10 @@ O parser deve ser tolerante apenas onde isso for seguro:
 
 - normalizar `CRLF` e `LF`;
 - reconhecer BOM/codificação quando possível;
-- identificar seções e separadores esperados;
+- identificar seções e **ambas** as variantes de separação do contrato: `---` isolado e linhas em branco entre registros completos, com EOF sem newline final;
 - dividir rótulo e valor somente na primeira ocorrência relevante;
 - preservar dois-pontos e caracteres especiais dentro de senhas e notas;
-- tratar linhas de continuação quando o formato real demonstrar essa necessidade;
+- **bloquear** linhas de continuação de notas ou comentários enquanto a sintaxe multiline não estiver homologada;
 - nunca descartar silenciosamente uma entrada parcialmente reconhecida.
 
 Quando o arquivo não corresponder ao contrato conhecido, a aplicação deve interromper a conversão ou produzir aviso claro, sem tentar “adivinhar” campos sensíveis.
