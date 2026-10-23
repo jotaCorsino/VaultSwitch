@@ -1,0 +1,2 @@
+Este é um arquivo fictício sem cabeçalhos, registros ou campos reconhecíveis.
+Ele existe apenas para validar a rejeição segura de uma entrada inválida.

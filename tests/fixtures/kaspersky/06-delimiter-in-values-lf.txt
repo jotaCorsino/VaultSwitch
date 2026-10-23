@@ -1,0 +1,10 @@
+Websites
+
+Website name: Portal --- Interno Fictício
+Website URL: https://delimiter.example.invalid/path:a,b
+Login name: Conta "especial" fictícia
+Login: login:com:dois-pontos
+Password: FICTITIOUS---NOT-A-BOUNDARY:comma,"quote"
+Comment: O texto contém --- mas a linha completa não é um separador.
+
+---
