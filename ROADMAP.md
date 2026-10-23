@@ -48,7 +48,9 @@ Nenhuma funcionalidade deve ser implementada nessa tarefa.
 
 ## FMT-001 — Contrato do formato Kaspersky
 
-**Estado:** 🔵 Aguardando homologação
+**Estado:** 🟢 Concluído (homologado)
+
+**Homologação humana:** 23/10/2026 — após revisão técnica e entrega de exemplo local de exportação, o responsável autorizou a continuidade. Homologação limitada ao contrato documentado, incluindo a variante observada com blocos separados por linhas em branco. **Não** significa compatibilidade total com todas as versões, idiomas, notas ou aplicações.
 
 **Tarefa detalhada:** [docs/tarefas/FMT-001.md](docs/tarefas/FMT-001.md)
 
