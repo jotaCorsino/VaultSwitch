@@ -2,6 +2,7 @@
 
 **Tarefa:** `docs/tarefas/COMMENT-INV-001.md`<br>
 **Issue bloqueante:** [#6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6)<br>
+**Draft PR:** [#14 — COMMENT-INV-001: investiga fronteiras de comentários multilinha](https://github.com/jotaCorsino/VaultSwitch/pull/14)<br>
 **Branch:** `investigation/COMMENT-INV-001`<br>
 **Base:** `main@c84692b6d8ccb832f48584e1577eed92c20861a9`<br>
 **Data da investigação:** 24/10/2026<br>
