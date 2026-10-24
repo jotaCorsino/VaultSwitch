@@ -14,9 +14,12 @@ const {
 } = require("../assets/js/keepassxc-csv.js");
 const {
   APP_VERSION,
+  canReadLocalFile,
   createSafeReport,
   createWorkflowController,
   copyReportText,
+  mountVaultSwitch,
+  readLocalFile,
   sanitizeDiagnostic,
 } = require("../assets/js/app.js");
 
@@ -50,6 +53,11 @@ function createHarness(overrides = {}) {
   const revokedUrls = [];
   let serializeCalls = 0;
   let urlSequence = 0;
+  const canReadFile = overrides.canReadFile || ((file) => (
+    file !== null &&
+    typeof file === "object" &&
+    typeof file.arrayBuffer === "function"
+  ));
   const readFile = overrides.readFile || ((file) => file.arrayBuffer());
   const parse = overrides.parse || parseKasperskyTxtBytes;
   const serialize = overrides.serialize || ((parsed) => {
@@ -66,6 +74,7 @@ function createHarness(overrides = {}) {
   });
   const controller = createWorkflowController({
     maxInputBytes: overrides.maxInputBytes || DEFAULT_MAX_BYTES,
+    canReadFile,
     readFile,
     parse,
     serialize,
@@ -80,6 +89,179 @@ function createHarness(overrides = {}) {
     createdBytes,
     revokedUrls,
     serializeCalls: () => serializeCalls,
+  };
+}
+
+function createMountedBrowserHarness() {
+  class BrowserBlob {
+    constructor(parts = [], options = {}) {
+      this.parts = parts.map((part) => Uint8Array.from(part));
+      this.size = this.parts.reduce((total, part) => total + part.byteLength, 0);
+      this.type = options.type || "";
+    }
+
+    async arrayBuffer() {
+      const bytes = new Uint8Array(this.size);
+      let offset = 0;
+      for (const part of this.parts) {
+        bytes.set(part, offset);
+        offset += part.byteLength;
+      }
+      return bytes.buffer;
+    }
+  }
+
+  class FakeClassList {
+    constructor() {
+      this.values = new Set();
+    }
+
+    add(...names) {
+      names.forEach((name) => this.values.add(name));
+    }
+
+    remove(...names) {
+      names.forEach((name) => this.values.delete(name));
+    }
+
+    toggle(name, force) {
+      if (force === true) {
+        this.values.add(name);
+      } else if (force === false) {
+        this.values.delete(name);
+      } else if (this.values.has(name)) {
+        this.values.delete(name);
+      } else {
+        this.values.add(name);
+      }
+    }
+  }
+
+  class FakeElement {
+    constructor(id) {
+      this.id = id;
+      this.attributes = new Map();
+      this.children = [];
+      this.classList = new FakeClassList();
+      this.listeners = new Map();
+      this.checked = false;
+      this.disabled = false;
+      this.files = [];
+      this.hidden = false;
+      this.textContent = "";
+      this.value = "";
+    }
+
+    addEventListener(name, listener) {
+      const listeners = this.listeners.get(name) || [];
+      listeners.push(listener);
+      this.listeners.set(name, listeners);
+    }
+
+    append(...children) {
+      this.children.push(...children);
+    }
+
+    appendChild(child) {
+      this.children.push(child);
+    }
+
+    focus() {}
+
+    removeAttribute(name) {
+      this.attributes.delete(name);
+      if (name === "href") {
+        this.href = undefined;
+      }
+    }
+
+    replaceChildren(...children) {
+      this.children = children;
+    }
+
+    select() {}
+
+    setAttribute(name, value) {
+      this.attributes.set(name, String(value));
+    }
+
+    async emit(name, details = {}) {
+      const event = {
+        defaultPrevented: false,
+        preventDefault() {
+          this.defaultPrevented = true;
+        },
+        target: this,
+        ...details,
+      };
+      for (const listener of this.listeners.get(name) || []) {
+        await listener(event);
+      }
+      return event;
+    }
+  }
+
+  const ids = [
+    "fictional-confirmation",
+    "source-file",
+    "drop-zone",
+    "workflow-panel",
+    "convert-action",
+    "reset-action",
+    "download-action",
+    "status-badge",
+    "status-heading",
+    "status-message",
+    "metric-recognized",
+    "metric-blocked",
+    "metric-problems",
+    "metric-warnings",
+    "metric-output",
+    "report-panel",
+    "report-text",
+    "diagnostic-list",
+    "copy-report-action",
+    "copy-feedback",
+    "consent-feedback",
+  ];
+  const elements = new Map(ids.map((id) => [id, new FakeElement(id)]));
+  const revokedUrls = [];
+  const scheduledCallbacks = [];
+  let urlSequence = 0;
+  const documentRef = {
+    createElement: (name) => new FakeElement(name),
+    getElementById: (id) => elements.get(id),
+  };
+  const browserScope = {
+    Blob: BrowserBlob,
+    FileReader: class UnsupportedFileReader {},
+    URL: {
+      createObjectURL: () => {
+        urlSequence += 1;
+        return `blob:vaultswitch-browser-${urlSequence}`;
+      },
+      revokeObjectURL: (url) => revokedUrls.push(url),
+    },
+    VaultSwitchKasperskyParser: {
+      DEFAULT_MAX_BYTES,
+      parseKasperskyTxtBytes,
+    },
+    VaultSwitchKeePassXcCsv: { serializeKeePassXcCsv },
+    addEventListener() {},
+    navigator: {},
+    setTimeout: (callback) => {
+      scheduledCallbacks.push(callback);
+      return scheduledCallbacks.length;
+    },
+  };
+  const controller = mountVaultSwitch(documentRef, browserScope);
+
+  return {
+    BrowserBlob,
+    controller,
+    elements,
+    revokedUrls,
+    scheduledCallbacks,
   };
 }
 
@@ -144,6 +326,7 @@ test("browser code avoids interpreted source content, network and persistence AP
   assert.doesNotMatch(source, /\bconsole\s*\./u);
   assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/u);
   assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB/u);
+  assert.doesNotMatch(source, /\bsetTimeout\s*\(/u);
 });
 
 test("safe report contains only allowed structural data", () => {
@@ -334,6 +517,80 @@ test("missing file is blocked without invoking the reader", async () => {
   assert.equal(reads, 0);
 });
 
+test("legacy browser Blob uses the FileReader fallback and keeps the byte limit", async () => {
+  const bytes = fixture("18-websites-blank-separated-crlf.txt");
+  let fileReaderCalls = 0;
+
+  class LegacyBlob {
+    constructor(content, size = content.byteLength) {
+      this.content = content;
+      this.size = size;
+    }
+  }
+
+  class FakeFileReader {
+    constructor() {
+      this.listeners = new Map();
+      this.result = null;
+    }
+
+    addEventListener(name, listener) {
+      this.listeners.set(name, listener);
+    }
+
+    readAsArrayBuffer(file) {
+      fileReaderCalls += 1;
+      this.result = Uint8Array.from(file.content);
+      this.listeners.get("load")();
+    }
+  }
+
+  const browserScope = { Blob: LegacyBlob, FileReader: FakeFileReader };
+  const harness = createHarness({
+    canReadFile: (file) => canReadLocalFile(file, browserScope),
+    readFile: (file) => readLocalFile(file, browserScope),
+  });
+  const legacyFile = new LegacyBlob(bytes);
+
+  assert.equal(typeof legacyFile.arrayBuffer, "undefined");
+  assert.equal(canReadLocalFile(legacyFile, browserScope), true);
+  const state = await harness.controller.analyzeFile(legacyFile, true);
+  assert.equal(state.view, "parsed");
+  assert.equal(state.metrics.recognized, 2);
+  assert.equal(fileReaderCalls, 1);
+
+  const oversized = new LegacyBlob(new Uint8Array(), DEFAULT_MAX_BYTES + 1);
+  const blocked = await harness.controller.analyzeFile(oversized, true);
+  assert.deepEqual(reportCodes(blocked), ["FILE_TOO_LARGE"]);
+  assert.equal(fileReaderCalls, 1);
+});
+
+test("FileReader fallback rejects an arbitrary file-like object before reading", async () => {
+  class BrowserBlob {}
+  class FakeFileReader {}
+  const browserScope = { Blob: BrowserBlob, FileReader: FakeFileReader };
+  let reads = 0;
+  const harness = createHarness({
+    canReadFile: (file) => canReadLocalFile(file, browserScope),
+    readFile: async () => {
+      reads += 1;
+      return new Uint8Array();
+    },
+  });
+  const arbitraryInput = { size: 5 };
+  const hostileInput = {
+    get size() {
+      throw new Error("FICTITIOUS-SIZE-SECRET");
+    },
+  };
+
+  assert.equal(canReadLocalFile(arbitraryInput, browserScope), false);
+  assert.equal(canReadLocalFile(hostileInput, browserScope), false);
+  const state = await harness.controller.analyzeFile(arbitraryInput, true);
+  assert.deepEqual(reportCodes(state), ["FILE_REQUIRED"]);
+  assert.equal(reads, 0);
+});
+
 test("oversized file is blocked before reading bytes", async () => {
   let reads = 0;
   const harness = createHarness({
@@ -468,19 +725,65 @@ test("clearing and replacing input revoke temporary URLs", async () => {
   ]);
 });
 
-test("download consumption revokes the URL and disables reuse", async () => {
+test("explicit download release requires the matching URL", async () => {
   const harness = createHarness();
   await harness.controller.analyzeFile(
     fakeFile(fixture("18-websites-blank-separated-crlf.txt")),
     true,
   );
   harness.controller.convert();
-  const released = harness.controller.releaseDownload();
+  const current = harness.controller.getState();
+  assert.equal(harness.controller.releaseDownload("blob:stale-url"), current);
+  assert.deepEqual(harness.revokedUrls, []);
+
+  const released = harness.controller.releaseDownload(current.downloadUrl);
 
   assert.equal(released.canDownload, false);
   assert.equal(released.downloadUrl, null);
   assert.deepEqual(harness.revokedUrls, ["blob:vaultswitch-test-1"]);
-  assert.equal(harness.controller.releaseDownload(), released);
+  assert.equal(harness.controller.releaseDownload(current.downloadUrl), released);
+});
+
+test("successive download clicks never schedule a stale revocation for a newer file", async () => {
+  const harness = createMountedBrowserHarness();
+  const download = harness.elements.get("download-action");
+
+  const blockedClick = await download.emit("click");
+  assert.equal(blockedClick.defaultPrevented, true);
+
+  const firstFile = new harness.BrowserBlob([
+    fixture("18-websites-blank-separated-crlf.txt"),
+  ]);
+  await harness.controller.analyzeFile(firstFile, true);
+  const firstReady = harness.controller.convert();
+  const firstUrl = firstReady.downloadUrl;
+  assert.equal(firstUrl, "blob:vaultswitch-browser-1");
+
+  const firstClick = await download.emit("click");
+  const repeatedClick = await download.emit("click");
+  assert.equal(firstClick.defaultPrevented, false);
+  assert.equal(repeatedClick.defaultPrevented, false);
+  assert.equal(harness.scheduledCallbacks.length, 0);
+  assert.deepEqual(harness.revokedUrls, []);
+
+  const secondFile = new harness.BrowserBlob([fixture("04-empty-fields-lf.txt")]);
+  await harness.controller.analyzeFile(secondFile, true);
+  assert.deepEqual(harness.revokedUrls, [firstUrl]);
+  const secondReady = harness.controller.convert();
+  const secondUrl = secondReady.downloadUrl;
+  assert.equal(secondUrl, "blob:vaultswitch-browser-2");
+
+  assert.equal(harness.controller.releaseDownload(firstUrl), secondReady);
+  assert.equal(harness.controller.getState().downloadUrl, secondUrl);
+  assert.deepEqual(harness.revokedUrls, [firstUrl]);
+
+  const secondClick = await download.emit("click");
+  assert.equal(secondClick.defaultPrevented, false);
+  assert.equal(harness.scheduledCallbacks.length, 0);
+  assert.equal(harness.controller.getState().downloadUrl, secondUrl);
+
+  harness.controller.clear();
+  assert.deepEqual(harness.revokedUrls, [firstUrl, secondUrl]);
 });
 
 test("a stale file read cannot replace a newer analysis", async () => {

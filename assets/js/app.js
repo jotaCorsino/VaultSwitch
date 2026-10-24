@@ -261,12 +261,41 @@
     });
   }
 
+  function canReadLocalFile(file, browserScope) {
+    if (!isObject(file) || !browserScope) {
+      return false;
+    }
+
+    try {
+      const BlobConstructor = browserScope.Blob;
+      if (
+        safeInteger(file.size) === undefined ||
+        typeof BlobConstructor !== "function" ||
+        !(file instanceof BlobConstructor)
+      ) {
+        return false;
+      }
+
+      return typeof file.arrayBuffer === "function" ||
+        typeof browserScope.FileReader === "function";
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function createWorkflowController(adapters) {
     if (!isObject(adapters)) {
       throw new TypeError("Workflow adapters are required.");
     }
 
-    for (const name of ["readFile", "parse", "serialize", "createDownloadUrl", "revokeDownloadUrl"]) {
+    for (const name of [
+      "canReadFile",
+      "readFile",
+      "parse",
+      "serialize",
+      "createDownloadUrl",
+      "revokeDownloadUrl",
+    ]) {
       if (typeof adapters[name] !== "function") {
         throw new TypeError(`Workflow adapter ${name} is required.`);
       }
@@ -354,11 +383,23 @@
         return blockedState("UI", "FICTIONAL_CONFIRMATION_REQUIRED");
       }
 
-      if (!isObject(file) || typeof file.arrayBuffer !== "function") {
+      let readable = false;
+      try {
+        readable = adapters.canReadFile(file) === true;
+      } catch (_error) {
+        // Um objeto hostil ou incompatível é tratado como entrada ausente.
+      }
+
+      if (!readable) {
         return blockedState("READ", "FILE_REQUIRED");
       }
 
-      const fileBytes = safeInteger(file.size);
+      let fileBytes;
+      try {
+        fileBytes = safeInteger(file.size);
+      } catch (_error) {
+        return blockedState("READ", "READ_FAILED");
+      }
       if (fileBytes === undefined) {
         return blockedState("READ", "READ_FAILED");
       }
@@ -511,8 +552,8 @@
       });
     }
 
-    function releaseDownload() {
-      if (downloadUrl === null) {
+    function releaseDownload(expectedUrl) {
+      if (downloadUrl === null || expectedUrl !== downloadUrl) {
         return state;
       }
 
@@ -707,6 +748,7 @@
 
     const controller = createWorkflowController({
       maxInputBytes: parserApi && parserApi.DEFAULT_MAX_BYTES,
+      canReadFile: (file) => canReadLocalFile(file, browserScope),
       readFile: (file) => readLocalFile(file, browserScope),
       parse: (bytes) => {
         if (!parserApi || typeof parserApi.parseKasperskyTxtBytes !== "function") {
@@ -792,10 +834,7 @@
     elements["download-action"].addEventListener("click", (event) => {
       if (!lastState || !lastState.canDownload) {
         event.preventDefault();
-        return;
       }
-
-      browserScope.setTimeout(() => controller.releaseDownload(), 1500);
     });
 
     elements["copy-report-action"].addEventListener("click", async () => {
@@ -821,6 +860,7 @@
   return Object.freeze({
     APP_VERSION,
     ALLOWED_DIAGNOSTIC_CODES,
+    canReadLocalFile,
     createSafeReport,
     createWorkflowController,
     copyReportText,
