@@ -65,7 +65,7 @@ test("COMMENT-INV-001 reproduces the delimiter ambiguity without real data", () 
   }
 });
 
-test("C01 and C02 block uncontracted multiline and blank-paragraph continuations", () => {
+test("C01 and C02 preserve multiline and blank-paragraph continuations", () => {
   const simpleContinuation = parse(fs.readFileSync(MULTILINE_NEGATIVE_FIXTURE));
   const blankParagraph = parse(bytes(websiteLines("parágrafo inicial fictício", [
     "",
@@ -73,10 +73,17 @@ test("C01 and C02 block uncontracted multiline and blank-paragraph continuations
     "parágrafo seguinte fictício",
   ])));
 
-  for (const result of [simpleContinuation, blankParagraph]) {
-    assert.equal(result.blocked, true);
-    assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
-  }
+  assert.equal(simpleContinuation.blocked, false);
+  assert.equal(
+    simpleContinuation.records[0].notes,
+    "Primeira linha inventada de um comentário hipotético.\n" +
+      "Segunda linha inventada sem rótulo; sua fronteira não está homologada.",
+  );
+  assert.equal(blankParagraph.blocked, false);
+  assert.equal(
+    blankParagraph.records[0].notes,
+    "parágrafo inicial fictício\n\n\nparágrafo seguinte fictício",
+  );
 });
 
 test("C04 documents that surrounding spaces do not disambiguate a delimiter", () => {
@@ -87,16 +94,24 @@ test("C04 documents that surrounding spaces do not disambiguate a delimiter", ()
   assert.equal(result.records.length, 2);
 });
 
-test("C05 and C06 block field-like or section-like continuations without a boundary", () => {
+test("C05 preserves field-like Comment lines without a boundary", () => {
   const fieldLike = parse(bytes(websiteLines("linha inicial fictícia", [
     "Website name: texto parecido com campo",
     "Password: FICTITIOUS-MENTIONED-FIELD",
     "Comment: texto parecido com outro campo",
   ])));
 
-  assert.equal(fieldLike.blocked, true);
-  assert.ok(diagnosticCodes(fieldLike).includes("DUPLICATE_FIELD"));
+  assert.equal(fieldLike.blocked, false);
+  assert.equal(
+    fieldLike.records[0].notes,
+    "linha inicial fictícia\n" +
+      "Website name: texto parecido com campo\n" +
+      "Password: FICTITIOUS-MENTIONED-FIELD\n" +
+      "Comment: texto parecido com outro campo",
+  );
+});
 
+test("C06 still blocks a section-like line without a proven boundary", () => {
   for (const sectionName of ["Websites", "Applications"]) {
     const sectionLike = parse(bytes(websiteLines("linha inicial fictícia", [sectionName])));
     assert.equal(sectionLike.blocked, true);
@@ -104,7 +119,7 @@ test("C05 and C06 block field-like or section-like continuations without a bound
   }
 });
 
-test("C07 distinguishes a simple EOF from an unsupported multiline continuation", () => {
+test("C07 preserves an empty or multiline Comment at EOF", () => {
   const emptyAtEof = parse(bytes(websiteLines("")));
   const multilineAtEof = parse(bytes(websiteLines("linha inicial fictícia", [
     "linha final fictícia sem newline",
@@ -112,11 +127,14 @@ test("C07 distinguishes a simple EOF from an unsupported multiline continuation"
 
   assert.equal(emptyAtEof.blocked, false);
   assert.equal(emptyAtEof.records.length, 1);
-  assert.equal(multilineAtEof.blocked, true);
-  assert.ok(diagnosticCodes(multilineAtEof).includes("AMBIGUOUS_MULTILINE"));
+  assert.equal(multilineAtEof.blocked, false);
+  assert.equal(
+    multilineAtEof.records[0].notes,
+    "linha inicial fictícia\nlinha final fictícia sem newline",
+  );
 });
 
-test("C09 blocks an uncontracted application Comment continuation", () => {
+test("C09 preserves an application Comment continuation", () => {
   const result = parse(bytes([
     "Applications",
     "",
@@ -128,8 +146,8 @@ test("C09 blocks an uncontracted application Comment continuation", () => {
     "linha seguinte fictícia",
   ]));
 
-  assert.equal(result.blocked, true);
-  assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+  assert.equal(result.blocked, false);
+  assert.equal(result.records[0].notes, "linha inicial fictícia\nlinha seguinte fictícia");
 });
 
 test("C10 preserves special characters that remain on the labeled Comment line", () => {

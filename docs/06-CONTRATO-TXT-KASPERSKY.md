@@ -1,14 +1,14 @@
 # 06 — Contrato do TXT do Kaspersky Password Manager
 
-**Tarefa:** FMT-001<br>
-**Estado:** homologado em 23/10/2026 para escopo restrito; compatibilidade com todas as variantes do KPM não declarada<br>
-**Escopo:** especificação de leitura, sem parser de produção
+**Tarefas:** FMT-001 / PARSE-COMMENT-001<br>
+**Estado:** contrato V0 homologado em 23/10/2026; emenda funcional de 24/10/2026 em Draft, sem compatibilidade universal declarada<br>
+**Escopo:** leitura das estruturas observadas e fixtures fictícias correspondentes; uso com cofres reais não autorizado
 
 ## 1. Objetivo e limite de confiança
 
-Este documento define um contrato conservador para investigar e, em uma tarefa futura, reconhecer exportações TXT do Kaspersky Password Manager (KPM). Ele não declara compatibilidade geral com todas as versões, idiomas ou tipos de entrada.
+Este documento define um contrato conservador para reconhecer exportações TXT do Kaspersky Password Manager (KPM) nas estruturas documentadas. Ele não declara compatibilidade geral com todas as versões, idiomas ou tipos de entrada.
 
-Nenhuma exportação real foi usada. As fixtures do projeto são inteiramente inventadas e existem para tornar decisões e lacunas reproduzíveis.
+Nenhum conteúdo de exportação do usuário foi versionado. As fixtures do projeto são inteiramente inventadas e existem para tornar decisões, observações estruturais e lacunas reproduzíveis.
 
 ### Classificação das afirmações
 
@@ -34,8 +34,10 @@ Consulta realizada em 23/10/2026.
 | E4 | [`Draggie306/kaspersky-to-csv`, README](https://github.com/Draggie306/kaspersky-to-csv/blob/a1ee149ed99db20c343d52276479d335f3ecb791/README.md) e [`converter.js`](https://github.com/Draggie306/kaspersky-to-csv/blob/77faeabbdd142841fa9389b7b4c165756f686ac4/converter.js) | Relata teste com KPM 23.2.0.242 e 540 entradas; reconhece seções, campos e `---`. | Implementação independente; não é especificação da Kaspersky e não demonstra outros idiomas/versões. |
 | E5 | [`MrSuicideParrot/Kaspersky-Password-Manager-to-CSV`, código](https://github.com/MrSuicideParrot/Kaspersky-Password-Manager-to-CSV/blob/131fd49425ba1f634b7b8864191440b1152090ff/KPM_to_CSV.py) | Corrobora websites/aplicações; acrescenta seção de notas, continuação até linha vazia e leitura UTF-8. | Versão do KPM não identificada; suposições do conversor podem não refletir o exportador atual. |
 | E6 | [Relato público de exportação do KPM 9.2](https://sourceforge.net/p/keepass/discussion/329221/thread/cbd1c7b520/) | Corrobora cabeçalho `Websites`, seis rótulos em inglês e separador `---`. | Amostra antiga, parcial e fornecida por usuário. |
-
 | E7 | Exemplo TXT fornecido pelo usuário em 23/10/2026, examinado **somente localmente**, sem transmitir ou versionar o conteúdo | Demonstra cinco registros de `Websites`, os seis rótulos em inglês, registros separados por linha vazia, UTF-8 sem BOM, CRLF e encerramento em EOF sem quebra final. | É uma única amostra. Contém dados sensíveis que **não devem ser copiados** para este repositório, prompts ou relatórios. Não comprova `Applications`, `Notes` ou multiline. |
+| E8 | [COMMENT-OBS-001 — segunda exportação fictícia observada](https://github.com/jotaCorsino/VaultSwitch/issues/15#issuecomment-6387657629), registrada sem copiar valores | Demonstra, no mesmo TXT informado como exportação KPM, `Websites`, `Applications` e `Other Accounts`; `Comment` em três linhas; BOM UTF-8; CRLF em Websites/Applications e `\r\r\n` nas continuações de Other Accounts. | Versão/build, canal e locale não informados; observação não prova todas as variantes. |
+| E9 | [COMMENT-OBS-001 — C02 observado](https://github.com/jotaCorsino/VaultSwitch/issues/15#issuecomment-6387732955), registrada sem copiar valores | Demonstra `\r\n\r\n---\r\n\r\n` tanto como trecho interno de `Comment` quanto como delimitador estrutural em Websites/Applications. | Confirma risco de ambiguidade local; não contém par mínimo de arquivos completos. |
+| E10 | [Decisão funcional da Issue #6](https://github.com/jotaCorsino/VaultSwitch/issues/6#issuecomment-6387967860) | Autoriza priorizar os padrões comuns observados, implementar multiline e três categorias, preservando o risco residual e os gates. | Não autoriza uso real, fechamento das Issues #6/#12/#17 ou heurística declarada como universal. |
 
 O código de terceiros foi consultado apenas como evidência. Nenhum trecho foi incorporado ao VaultSwitch. Arquivos públicos chamados de “sample” não foram abertos, pois sua origem e sanitização não podiam ser garantidas.
 
@@ -60,10 +62,14 @@ O código de terceiros foi consultado apenas como evidência. Nenhum trecho foi 
 | O idioma da interface determina os rótulos no arquivo. | **Não verificado** | E3 traduz a interface, não mostra o conteúdo exportado |
 | Uma conta adicional do mesmo website vira outro bloco repetido. | **Hipótese** | E2 confirma múltiplas contas, mas não sua serialização |
 | Tipos como cartões, endereços, documentos e “Other” aparecem no TXT e com quais rótulos. | **Não verificado** | E2 confirma os tipos no cofre, não o formato exportado |
+| Uma exportação observada contém `Other Accounts` e os rótulos `Account name`, `Login name`, `Login`, `Password`, `Comment`. | **Observação direta local da estrutura relatada** | E8 |
+| Websites e Applications observados preservam continuação de `Comment` com CRLF. | **Observação direta local da estrutura relatada** | E8, E9 |
+| Other Accounts observado usa `\r\r\n` nas continuações de `Comment`. | **Observação direta local da estrutura relatada** | E8 |
+| `\r\n\r\n---\r\n\r\n` pode ser conteúdo de `Comment` ou delimitador estrutural. | **Observação direta local** | E9 |
 
-## 4. Escopo candidato para PARSE-001
+## 4. Escopo V0 e emenda funcional
 
-O suporte inicial candidato fica limitado a:
+O suporte V0 homologado em PARSE-001 ficou limitado a:
 
 - texto decodificado estritamente como UTF-8, com ou sem BOM UTF-8;
 - finais de linha CRLF ou LF, normalizados internamente para LF;
@@ -77,13 +83,27 @@ O suporte inicial candidato fica limitado a:
 
 Este escopo **limitado** foi homologado pelo responsável humano em 23/10/2026 após complementar a investigação com uma amostra local (E7). Websites com rótulos ingleses e separação por linhas em branco foram observados diretamente em uma única amostra; Applications e separador `---` continuam amparados apenas em evidência secundária.
 
-Permanecem fora do suporte inicial:
+Permaneceram fora do suporte V0:
 
 - rótulos traduzidos, inclusive PT-BR;
-- seção `Notes` e valores multilinha enquanto a fronteira exata não for homologada; a investigação está rastreada na [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6);
+- seção `Notes` e valores multilinha, então ainda sem decisão funcional; a lacuna foi rastreada na [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6);
 - codificações Windows-1252, UTF-16 ou qualquer fallback heurístico;
 - tipos desconhecidos do cofre;
 - arquivos que misturem formatos ou contenham estrutura ambígua.
+
+### 4.1 Emenda funcional PARSE-COMMENT-001 — 24/10/2026
+
+A decisão E10 amplia o parser em Draft, sem apagar os limites históricos do V0. O escopo funcional passa a incluir:
+
+- `Comment` como o último campo conhecido do registro, com continuação livre em linhas subsequentes;
+- preservação de espaços, dois-pontos, linhas vazias e linhas isoladas `---` dentro de `Comment`;
+- fronteira contextual quando a continuação termina diante de um bloco completo iniciado pelo rótulo estrutural da categoria, de um próximo cabeçalho reconhecido ou de um bloco desconhecido estruturalmente identificável;
+- remoção apenas da decoração terminal usada como fronteira (`linhas vazias`, `---`, `linhas vazias`), mantendo ocorrências internas;
+- seção `Other Accounts`, tipo normalizado `other`, `Account name` em `title`, `Login name` em `accountName`, `Login` em `username`, `Password`, `Comment` em `notes`, URL vazia e grupo `Other Accounts`;
+- UTF-8 com BOM opcional; LF/CRLF; e sequência observada `\r\r\n`, normalizada como uma única quebra lógica `\n`;
+- CR isolado fora de `\r\n`/`\r\r\n`, campos desconhecidos antes de `Comment`, seções desconhecidas identificáveis, codificações inválidas e contagens inconsistentes continuam bloqueantes.
+
+Essa política resolve os padrões comuns observados e testados, mas é uma interpretação contextual. E9 demonstra que delimitador e conteúdo podem compartilhar a mesma subsequência; portanto o risco teórico permanece e a Issue #6 não é encerrada por esta implementação.
 
 ## 5. Estrutura candidata
 
@@ -93,19 +113,21 @@ Representação informativa, não código de parser:
 
 ```text
 documento       := linhas_em_branco* secao+
-secao           := secao_websites | secao_apps | secao_desconhecida
+secao           := secao_websites | secao_apps | secao_other | secao_desconhecida
 secao_websites  := "Websites" linhas_em_branco* registro_website*
 secao_apps      := "Applications" linhas_em_branco* registro_application*
+secao_other     := "Other Accounts" linhas_em_branco* registro_other*
 registro        := campos (separador_tracos | separador_branco | proxima_secao | EOF)
 separador_tracos := linha cujo conteúdo aparado é exatamente "---"
 separador_branco := linha(s) vazia(s) entre registro completo e proximo registro reconhecido
 proxima_secao   := cabecalho reconhecido quando não existe registro ativo
 campo           := rotulo ":" espaço_sintatico_opcional valor
+comment         := "Comment:" valor_inicial ("\n" linha_livre)*
 ```
 
 A linha em branco imediatamente após o cabeçalho `Websites` é layout, não um registro vazio. Na variante E7, cada registro possui seis campos e os blocos são separados por uma linha em branco; o último termina em EOF sem newline. Isso é **evidência do exemplo local**, não gramática oficial do produto. Se um bloco contiver conteúdo sem rótulo ou fronteira ambígua (como possíveis valores multilinha), a análise deve bloquear em vez de perder dados.
 
-Um cabeçalho `Websites` ou `Applications` encontrado enquanto ainda existe registro ativo, sem linha em branco ou `---` que o tenha finalizado, é ambíguo com conteúdo multiline e deve bloquear. O cabeçalho não pode, sozinho, truncar silenciosamente o registro anterior.
+Um cabeçalho `Websites`, `Applications` ou `Other Accounts` encontrado enquanto ainda existe registro ativo e sem contexto de fronteira suficiente é ambíguo com conteúdo multiline. O parser mantém bloqueio para o cabeçalho isolado sem bloco completo/fronteira, evitando truncamento silencioso do registro anterior.
 
 Cabeçalhos e rótulos são comparados literalmente e com diferenciação entre maiúsculas/minúsculas no contrato V0. Relaxar essa regra exigirá evidência e teste próprios.
 
@@ -120,7 +142,7 @@ A ordem de campos exibida pelas fontes é consistente, mas não foi documentada 
 | `Login name` | uma vez | Pode estar vazio. Não é sinônimo comprovado de `Login`. |
 | `Login` | uma vez | Pode estar vazio; não deve ser preenchido a partir de outro campo. |
 | `Password` | uma vez | Pode estar vazio; nunca deve aparecer em diagnóstico ou log. |
-| `Comment` | uma vez | Pode estar vazio; multiline permanece não homologado. |
+| `Comment` | uma vez | Pode estar vazio; após o rótulo, linhas de continuação são preservadas conforme a emenda 4.1. |
 
 ### 5.3 Aplicação
 
@@ -130,13 +152,23 @@ A ordem de campos exibida pelas fontes é consistente, mas não foi documentada 
 | `Login name` | uma vez | Pode estar vazio e deve ser preservado separadamente. |
 | `Login` | uma vez | Pode estar vazio. |
 | `Password` | uma vez | Pode estar vazio; nunca deve aparecer em diagnóstico ou log. |
-| `Comment` | uma vez | Pode estar vazio; multiline permanece não homologado. |
+| `Comment` | uma vez | Pode estar vazio; após o rótulo, linhas de continuação são preservadas conforme a emenda 4.1. |
 
-### 5.4 Notas — provisório e bloqueado
+### 5.4 Other Accounts
+
+| Rótulo observado | Cardinalidade candidata | Tratamento |
+| --- | --- | --- |
+| `Account name` | uma vez | Identificador estrutural e origem de `title`; não confundir com `Login name`. |
+| `Login name` | uma vez | Origem de `accountName`; vazio é permitido, valor não vazio permanece bloqueante no CSV. |
+| `Login` | uma vez | Origem de `username`; vazio é preservado. |
+| `Password` | uma vez | Pode estar vazio; nunca aparece em diagnóstico ou log. |
+| `Comment` | uma vez | Origem de `notes`, incluindo continuação `\r\r\n` normalizada para uma quebra lógica. |
+
+### 5.5 Notas — provisório e bloqueado
 
 Apenas E5 indica uma seção `Notes` com `Name` e `Text`, incluindo continuação em linhas seguintes. Como as fontes não convergem sobre a fronteira das linhas de continuação, o contrato V0 deve reconhecer a presença da seção para diagnóstico, contabilizá-la como não suportada e bloquear uma conversão que pudesse perder seu conteúdo.
 
-### 5.5 `Login name` não pode ser descartado
+### 5.6 `Login name` não pode ser descartado
 
 As evidências distinguem `Login name` de `Login`. O modelo normalizado atual do projeto possui `username`, mas não possui um campo inequívoco para o nome da conta de origem.
 
@@ -154,16 +186,16 @@ Descartar ou remapear automaticamente `Login name` não é permitido.
 - Dois-pontos posteriores pertencem ao valor e devem ser preservados.
 - No máximo um espaço ASCII imediatamente após o primeiro `:` é tratado como espaçamento sintático. Espaços adicionais pertencem ao valor.
 - Vírgulas, aspas, ponto e vírgula e caracteres com significado futuro para CSV não possuem função especial no TXT e devem ser preservados literalmente.
-- `---` só delimita um registro quando ocupa sozinho a linha após remoção de espaços periféricos.
-- Linha(s) em branco também podem delimitar websites na variante E7, **apenas** se o bloco anterior estiver estruturalmente completo e o próximo começar com um rótulo estrutural ou seção reconhecida.
+- `---` isolado não é mais tratado automaticamente como delimitador depois que `Comment` foi aberto; pode ser conteúdo e deve ser preservado até que o contexto seguinte comprove uma fronteira adotada.
+- Linha(s) em branco podem delimitar registros, **apenas** se o bloco anterior estiver estruturalmente completo e o próximo começar com um bloco completo reconhecido ou seção reconhecida.
 - Não confundir a linha vazia após cabeçalho de seção com registro vazio; preservar um último registro completo mesmo quando o arquivo terminar sem newline.
 - `---` dentro de uma linha de valor não é delimitador.
-- Uma linha de continuação formada somente por `---` é lexicalmente idêntica ao delimitador e, sem uma gramática adicional, a intenção não pode ser determinada somente pelos bytes.
+- Uma linha de continuação formada somente por `---` pode ser preservada como parte de `Comment`; quando precede um bloco completo reconhecido, a implementação funcional a interpreta como decoração de fronteira. O contraexemplo sintético continua demonstrando o risco dessa decisão contextual.
 - Linhas vazias fora de valores multilinha são layout ou fronteira, conforme contexto; não criam registros vazios.
-- A amostra E7 não comprova sintaxe de conteúdo multiline: esse conteúdo permanece fora do escopo e deve bloquear sempre que a ambiguidade for detectável.
+- As observações E8/E9 fundamentam o suporte funcional multiline nas três categorias, mas não comprovam ausência de ambiguidade geral.
 - Registros repetidos não devem ser deduplicados, agrupados ou fundidos automaticamente.
 
-A PARSE-001 mantém `---` isolado como delimitador para preservar o contrato homologado, mas não consegue detectar quando essa mesma linha era conteúdo de um `Comment` multiline. Esse risco residual está rastreado na [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6); até sua investigação, não se deve afirmar que multiline sempre bloqueia nem que a migração completa está protegida contra essa ambiguidade.
+A PARSE-COMMENT-001 passa a acumular linhas após `Comment` e só remove a decoração terminal quando identifica o próximo bloco/seção conforme a emenda 4.1. Esse comportamento prioriza os padrões usuais observados, mas não resolve a colisão em que conteúdo imita um registro completo. O risco residual continua rastreado na [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6).
 
 O parser futuro não deve aplicar `trim()` indiscriminado a segredos ou notas. Qualquer normalização de espaços precisa distinguir sintaxe do exportador de conteúdo do usuário.
 
@@ -177,24 +209,24 @@ O parser futuro não deve aplicar `trim()` indiscriminado a segredos ou notas. Q
 4. Rejeitar BOM UTF-16 LE/BE com `ENCODING_UNSUPPORTED` até existir evidência e teste homologados.
 5. Sem BOM, tentar UTF-8 estrito; qualquer sequência inválida produz `INVALID_UTF8`.
 6. Não substituir bytes inválidos por `U+FFFD` e não fazer fallback silencioso para Windows-1252.
-7. Normalizar CRLF e LF para uma representação interna comum; CR isolado é não verificado e deve ser rejeitado ou tratado por decisão explícita posterior.
+7. Normalizar CRLF e LF para uma representação interna comum; aceitar também `\r\r\n` observado em continuações de Other Accounts como uma única quebra lógica; rejeitar qualquer outro CR isolado.
 
-E7 demonstrou UTF-8 sem BOM e CRLF em **uma** exportação. Aceitar BOM UTF-8 e LF é regra de robustez proposta, não uma afirmação universal sobre o que o KPM emite.
+E7 demonstrou UTF-8 sem BOM e CRLF em **uma** exportação. E8/E9 registram UTF-8 com BOM, CRLF e `\r\r\n` nas estruturas indicadas. Aceitar LF continua regra de robustez, não afirmação universal.
 
 ### 7.2 Codificações ainda não suportadas
 
 Windows-1252 é plausível em aplicações Windows antigas, mas não foi confirmado. UTF-16 também não foi confirmado. As fixtures correspondentes são sondas negativas: servem para demonstrar detecção/bloqueio, não compatibilidade.
 
-## 8. Algoritmo de reconhecimento especificado
+## 8. Algoritmo de reconhecimento implementado
 
-Sem implementar código nesta tarefa, PARSE-001 deverá seguir esta ordem:
+PARSE-001 e a emenda PARSE-COMMENT-001 seguem esta ordem:
 
 1. **Pré-validação de bytes:** arquivo vazio, BOM e limite de tamanho.
 2. **Decodificação estrita:** conforme a política da seção 7.
-3. **Normalização de linhas:** CRLF/LF para LF, preservando conteúdo dos valores.
+3. **Normalização de linhas:** CRLF/LF para LF; `\r\r\n` observado em `Other Accounts` para uma única quebra lógica; outros CR isolados são rejeitados.
 4. **Detecção de idioma/variante:** procurar apenas cabeçalhos homologados; não traduzir por aproximação.
 5. **Detecção de seção:** iniciar contexto somente em cabeçalho conhecido.
-6. **Coleta de registro:** até separador de traços, linha(s) vazia(s) entre blocos completos com próximo registro reconhecido, próxima seção após fronteira comprovada ou EOF. Linhas em branco isoladas ou conteúdo multiline ambíguo não permitem perda silenciosa.
+6. **Coleta de registro:** os rótulos conhecidos são lidos até `Comment`; depois dele, linhas livres, vazias e `---` são acumuladas até uma fronteira contextual com próximo registro/seção identificável ou EOF. Um novo registro estrutural incompleto após decoração de fronteira é separado e bloqueado, não incorporado à nota anterior.
 7. **Leitura de campo:** separar somente no primeiro `:` e validar rótulo literal.
 8. **Validação estrutural:** detectar rótulo ausente, duplicado, desconhecido ou fora de seção.
 9. **Preservação:** manter ordem, campos vazios e metadados de origem; nunca deduplicar.
@@ -221,7 +253,7 @@ Os diagnósticos devem conter apenas código, seção, índice do registro e nom
 
 ## 10. Matriz de casos
 
-| Caso | Evidência do formato | Fixture | Resultado esperado do contrato V0 |
+| Caso | Evidência do formato | Fixture | Resultado esperado do contrato atual |
 | --- | --- | --- | --- |
 | Dois websites, LF, campos em inglês | Secundária convergente | `01-websites-lf.txt` | Reconhecer 2 registros. |
 | Aplicações, CRLF | Secundária para estrutura; EOL não verificado | `02-applications-crlf.txt` | Reconhecer 2 registros após normalizar CRLF. |
@@ -239,16 +271,19 @@ Os diagnósticos devem conter apenas código, seção, índice do registro e nom
 | Rótulo duplicado em registro conhecido | Negativo inventado | `14-duplicate-field-negative-lf.txt` | `DUPLICATE_FIELD`; bloquear sem escolher valor. |
 | Rótulo desconhecido em registro conhecido | Negativo inventado | `15-unknown-field-negative-lf.txt` | `UNKNOWN_FIELD`; preservar a ocorrência como não interpretada e bloquear. |
 | Website reconhecível seguido por seção desconhecida | Negativo inventado | `16-mixed-supported-unknown-negative-lf.txt` | `UNKNOWN_SECTION`; bloquear o resultado global, inclusive o website reconhecido, sem exportação parcial implícita. |
-| `Comment` hipotético em múltiplas linhas | Hipótese negativa inventada | `17-comment-multiline-hypothetical-negative-lf.txt` | `AMBIGUOUS_MULTILINE`; bloquear o registro enquanto a gramática não estiver homologada. |
+| `Comment` em múltiplas linhas | Fixture histórica inventada | `17-comment-multiline-hypothetical-negative-lf.txt` | Preservar a continuação do `Comment`; não bloquear. |
 | Websites em blocos separados por linha em branco, CRLF, EOF sem newline | Estrutura observada localmente (E7), **valores fictícios inventados** | `18-websites-blank-separated-crlf.txt` | Reconhecer dois websites fictícios sem exigir `---` nem newline final. |
+| Comentário que imita registro completo | Contraexemplo sintético, não observado | `19-comment-delimiter-ambiguous-hypothetical-lf.txt` | Preservar como risco documentado: a política contextual o interpreta como dois registros; não declarar gramática universal. |
+| Três categorias, comentários multiline, BOM, CRLF/CRRLF e `---` interno/estrutural | Estruturas observadas E8/E9; **todos os valores inventados** | `20-three-categories-multiline-observed-structure-crlf.txt` | Reconhecer quatro registros, normalizar quebras lógicas e preservar exatamente cada `Comment` em `notes`. |
+| Campo desconhecido em `Other Accounts` | Negativo inventado | `21-other-accounts-invalid-field-negative-lf.txt` | `UNKNOWN_FIELD`; bloquear globalmente e impedir CSV parcial. |
 
 O inventário detalhado está em [`tests/fixtures/kaspersky/README.md`](../tests/fixtures/kaspersky/README.md).
 
-## 11. Condições para iniciar PARSE-001
+## 11. Gates históricos e atuais
 
-PARSE-001 só deve começar depois de homologação humana deste contrato e das seguintes decisões:
+PARSE-001 foi iniciado após homologação humana deste contrato e das seguintes decisões históricas:
 
-1. aceitar formalmente o escopo limitado a rótulos em inglês; `Websites` tem observação local E7, enquanto `Applications` permanece apoiado em evidência secundária; suportar ambos os separadores identificados, sem aceitar multiline por inferência;
+1. aceitar formalmente o escopo limitado a rótulos em inglês; `Websites` tinha observação local E7, enquanto `Applications` permanecia apoiado em evidência secundária; suportar ambos os separadores identificados;
 2. decidir como preservar `Login name` no modelo normalizado;
 3. decidir se a seção `Notes` fica bloqueada na primeira versão ou obter uma estrutura sanitizada/manual suficiente para homologá-la;
 4. aceitar a política UTF-8 estrita ou adicionar evidência para outra codificação;
@@ -256,3 +291,5 @@ PARSE-001 só deve começar depois de homologação humana deste contrato e das 
 6. usar apenas fixtures fictícias; nenhuma exportação real pode entrar no repositório, em logs ou em prompts.
 
 **Decisão de planejamento de 23/10/2026:** autorizada a preparação de PARSE-001 com rótulos ingleses de `Websites`/`Applications`, as duas variantes de delimitador documentadas, `accountName` separado de `username`, UTF-8 estrito (BOM opcional), bloqueio de `Notes`/multiline e bloqueio global para dados desconhecidos. Nenhum dado sensível da amostra será integrado ao projeto. O contrato homologado é o ponto de partida dos testes, **não** certificação de migração completa de um cofre real.
+
+**Decisão funcional de 24/10/2026:** E10 autoriza implementar comentários multilinha e `Other Accounts` segundo E8/E9, substituir os testes de bloqueio provisório por preservação funcional e manter os gates de segurança. O serializador continua bloqueando `accountName` não vazio; `Notes`, desconhecidos e erros estruturais continuam bloqueantes; as Issues #6, #12 e #17 permanecem abertas. Esta emenda em Draft não libera cofres reais, não encerra a ambiguidade teórica do delimitador e depende de homologação humana no PR.
