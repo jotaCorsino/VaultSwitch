@@ -133,7 +133,7 @@ Serializar os registros normalizados em CSV robusto para o assistente de importa
 
 **Entrega para revisão:** [interface](index.html) · [lógica da UI](assets/js/app.js) · [testes](tests/ui.test.js) · [evidências](docs/evidencias/UI-001.md) · [Draft PR #11](https://github.com/jotaCorsino/VaultSwitch/pull/11)
 
-**Gate atual:** protótipo V0 implementado somente para fixtures fictícias; revisão técnica, UX, segurança e homologação humanas pendentes. QA-001 não iniciada.
+**Gate atual:** protótipo V0 integrado ao parser/CSV da `main` pela UI-INTEG-001, incluindo `Other Accounts` e comentários multiline nas estruturas observadas; revisão técnica, UX, segurança e homologação humanas pendentes. QA-001 não iniciada.
 
 **Limite do escopo:** protótipo V0 apenas para testes fictícios, sem release/utilização com cofres reais enquanto a Issue #6 estiver aberta; sem forçar exportação bloqueada. Incorporar relatório de diagnóstico copiável apenas com metadados estruturais seguros, nunca com dados de credenciais.
 
@@ -198,6 +198,6 @@ Preparar uma versão estável do utilitário com instruções de uso e migraçã
 
 **Estado:** 🔴 Requisito bloqueante para uso real — [Issue #6](https://github.com/jotaCorsino/VaultSwitch/issues/6) aberta.
 
-A gramática da exportação do Kaspersky para comentários multiline e linhas isoladas `---` ainda não está comprovada. O parser V0 pode interpretar `---` como fronteira mesmo que a linha pertença ao comentário. O suporte **integral e sem perda** a `Comment` → `Notes` deverá ser investigado, implementado e homologado em tarefa separada antes de qualquer uso com cofre real, independentemente de CSV-001/UI-001 estarem prontas.
+O parser funcional cobre os padrões multiline observados e preserva `Comment` → `Notes` nas fixtures homologadas em Draft. A gramática universal do exportador ainda não está comprovada: conteúdo que imite um registro completo pode colidir com a fronteira contextual. A Issue #6 permanece aberta e bloqueante antes de qualquer uso com cofre real, independentemente de CSV-001/UI-001 estarem prontas.
 
 A compatibilidade de `Login name` não vazio com o importador do KeePassXC também precisa de solução validada antes de afirmar migração integral.
