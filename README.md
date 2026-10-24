@@ -4,7 +4,7 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 
 ## Acompanhamento do desenvolvimento
 
-**Fase atual:** UI-001 — ⚪ Planejado
+**Fase atual:** UI-001 — 🔵 Em validação / aguardando homologação
 
 | Ordem | ID | Etapa | Status |
 | --- | --- | --- | --- |
@@ -13,17 +13,17 @@ O **VaultSwitch** é um utilitário local/offline para converter exportações d
 | 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | 🟢 Concluído (homologado) |
 | 3 | PARSE-001 | Parser local do TXT do Kaspersky | 🟢 Concluído (homologado V0) |
 | 4 | CSV-001 | Geração de CSV compatível com KeePassXC | 🟢 Concluído (homologado V0 experimental) |
-| 5 | UI-001 | Interface moderna e fluxo de conversão | ⚪ Planejado |
+| 5 | UI-001 | Interface moderna e fluxo de conversão | 🔵 Em validação / aguardando homologação |
 | 6 | QA-001 | Validação ponta a ponta no KeePassXC | ⚪ Planejado |
 | 7 | REL-001 | Empacotamento e documentação de uso | ⚪ Planejado |
 
 **Legenda:** ⚪ Planejado · 🟡 Em implementação · 🔵 Em validação / aguardando homologação · 🟢 Concluído (homologado) · 🟠 Pausado.
 
-**Próxima tarefa:** [UI-001 — interface local e relatório de diagnóstico seguro](docs/tarefas/UI-001.md). Somente documentação preparada; implementação e QA-001 **não** iniciadas.
+**Gate atual:** a [UI-001](docs/tarefas/UI-001.md) está implementada no [Draft PR #11](https://github.com/jotaCorsino/VaultSwitch/pull/11) e aguarda revisão técnica, UX, segurança e homologação humana. QA-001 **não** foi iniciada.
 
 **Gate de uso real:** [Issue #6 — `Comment` multilinha](https://github.com/jotaCorsino/VaultSwitch/issues/6) continua aberta e **bloqueia a declaração de segurança para migração real**, mesmo com PARSE-001 homologada. `Login name` não vazio também não pode ser perdido na importação.
 
-**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Tarefa UI-001](docs/tarefas/UI-001.md) · [Tarefa CSV-001](docs/tarefas/CSV-001.md) · [Serializador CSV](assets/js/keepassxc-csv.js) · [Testes CSV-001](tests/keepassxc-csv.test.js) · [Evidências CSV-001](docs/evidencias/CSV-001.md) · [Contrato homologado](docs/06-CONTRATO-TXT-KASPERSKY.md) · [Parser](assets/js/kaspersky-parser.js)
+**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Interface](index.html) · [Lógica da UI](assets/js/app.js) · [Testes UI-001](tests/ui.test.js) · [Evidências UI-001](docs/evidencias/UI-001.md) · [Tarefa UI-001](docs/tarefas/UI-001.md) · [Serializador CSV](assets/js/keepassxc-csv.js) · [Parser](assets/js/kaspersky-parser.js) · [Contrato homologado](docs/06-CONTRATO-TXT-KASPERSKY.md)
 
 ## Problema / contexto
 
@@ -122,6 +122,7 @@ Detalhes: [docs/03-SEGURANCA-E-PRIVACIDADE.md](docs/03-SEGURANCA-E-PRIVACIDADE.m
 - [Contrato proposto do TXT do Kaspersky](docs/06-CONTRATO-TXT-KASPERSKY.md)
 - [Evidências da FMT-001](docs/evidencias/FMT-001.md)
 - [Tarefa UI-001 — interface e relatório seguro](docs/tarefas/UI-001.md)
+- [Evidências UI-001](docs/evidencias/UI-001.md)
 - [Evidências CSV-001](docs/evidencias/CSV-001.md)
 
 ## Método ÓRBITA

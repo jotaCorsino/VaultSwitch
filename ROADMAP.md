@@ -127,9 +127,13 @@ Serializar os registros normalizados em CSV robusto para o assistente de importa
 
 ## UI-001 — Interface local
 
-**Estado:** ⚪ Planejado
+**Estado:** 🔵 Aguardando homologação
 
 **Tarefa detalhada:** [docs/tarefas/UI-001.md](docs/tarefas/UI-001.md)
+
+**Entrega para revisão:** [interface](index.html) · [lógica da UI](assets/js/app.js) · [testes](tests/ui.test.js) · [evidências](docs/evidencias/UI-001.md) · [Draft PR #11](https://github.com/jotaCorsino/VaultSwitch/pull/11)
+
+**Gate atual:** protótipo V0 implementado somente para fixtures fictícias; revisão técnica, UX, segurança e homologação humanas pendentes. QA-001 não iniciada.
 
 **Limite do escopo:** protótipo V0 apenas para testes fictícios, sem release/utilização com cofres reais enquanto a Issue #6 estiver aberta; sem forçar exportação bloqueada. Incorporar relatório de diagnóstico copiável apenas com metadados estruturais seguros, nunca com dados de credenciais.
 
