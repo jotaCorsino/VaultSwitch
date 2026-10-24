@@ -305,7 +305,27 @@ test("static page exposes accessible controls and no bypass", () => {
 
   assert.doesNotMatch(html, /forçar conversão|converter parcialmente/iu);
   assert.match(html, /connect-src 'none'/u);
-  assert.match(html, /font-src 'none'/u);
+});
+
+test("CSP supports browser annotation visuals without enabling network access", () => {
+  const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
+
+  assert.match(html, /style-src 'self' 'unsafe-inline'/u);
+  assert.match(html, /img-src 'self' data: blob:/u);
+  assert.match(html, /font-src 'self' data:/u);
+
+  for (const directive of [
+    "connect-src 'none'",
+    "object-src 'none'",
+    "media-src 'none'",
+    "frame-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+  ]) {
+    assert.ok(html.includes(directive), `missing locked directive: ${directive}`);
+  }
+
+  assert.doesNotMatch(html, /https?:\/\//u);
 });
 
 test("styles include 360px-compatible responsive and focus rules", () => {
