@@ -32,7 +32,10 @@ Convenções de segurança:
 | `16-mixed-supported-unknown-negative-lf.txt` | UTF-8, LF | Negativo inventado | Website reconhecível seguido por seção/registro desconhecido | `UNKNOWN_SECTION`; bloquear o resultado global sem exportação parcial |
 | `17-comment-multiline-hypothetical-negative-lf.txt` | UTF-8, LF | Hipótese negativa inventada | `Comment` seguido por linha sem rótulo | `AMBIGUOUS_MULTILINE`; bloquear o registro |
 | `18-websites-blank-separated-crlf.txt` | UTF-8 sem BOM, CRLF, sem newline final | Separação por linha em branco observada em um exemplo local; **todos os valores fictícios** | Dois websites, linhas em branco entre os blocos, URL fictícia com porta, `Login name` vazio e comentários opcionais | Reconhecer dois registros sem delimitador `---` |
+| `19-comment-delimiter-ambiguous-hypothetical-lf.txt` | UTF-8, LF | Hipótese negativa inventada para COMMENT-INV-001; **não observada em exportação KPM** | O mesmo TXT pode representar dois websites ou um website cujo `Comment` contém `---` e linhas semelhantes a campos | Documentar que o parser atual aceita dois registros sem bloquear; não homologar multiline por esta fixture |
 
 ## Observação sobre expectativas
 
 Não existe parser nesta tarefa. As expectativas acima são oráculos documentais para PARSE-001 depois que o contrato for homologado. Os testes da FMT-001 verificam apenas propriedades físicas dos arquivos, ausência de dados reais conhecidos e coerência com este inventário. Todos os casos são inventados; os itens classificados como negativos foram desenhados para provocar bloqueio, não para representar saídas observadas do KPM.
+
+A fixture `19` foi acrescentada posteriormente pela investigação COMMENT-INV-001. Ela é um contraexemplo sintético: reproduz uma ambiguidade do contrato/parser, mas não é evidência de que o exportador KPM produza essa sequência. Seu teste observacional fica separado em `tests/comment-investigation.test.js` para não confundir a limitação conhecida com suporte homologado.

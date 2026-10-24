@@ -376,7 +376,7 @@ test("all fixture diagnostics use only safe structural coordinates", () => {
     .sort();
   const allowedKeys = new Set(["code", "severity", "section", "recordIndex", "field"]);
 
-  assert.equal(fixtureNames.length, 18);
+  assert.equal(fixtureNames.length, 19);
 
   for (const name of fixtureNames) {
     const result = parseFixture(name);
