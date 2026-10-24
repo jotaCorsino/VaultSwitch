@@ -10,7 +10,7 @@ COMO ABRIR
 6. Clique em "Baixar Revisão" e envie o arquivo .json nesta conversa.
 
 O modo revisão é independente do conversor e não altera seu funcionamento.
-O ZIP contém apenas index.html e os arquivos necessários em _review/.
+O ZIP contém index.html, os arquivos de revisão em _review/ e a licença dos ícones Tabler.
 Não é necessário instalar o Kaspersky ou KeePassXC nem configurar servidor.
 
 IMPORTANTE
@@ -26,5 +26,5 @@ IMPORTANTE
 
 IDENTIFICAÇÃO
 Projeto: VAULTSWITCH
-Revisão: layout-r1
+Revisão: layout-r2
 Origem do modo revisão: Technolife REV-004.5 m0.3 (branch de testes).
