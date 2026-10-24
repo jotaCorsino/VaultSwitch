@@ -30,6 +30,58 @@ function fixture(name) {
   return fs.readFileSync(path.join(FIXTURE_DIRECTORY, name));
 }
 
+function textBytes(lines) {
+  return new TextEncoder().encode(Array.isArray(lines) ? lines.join("\n") : lines);
+}
+
+function parseQualifiedCsv(csvBytes) {
+  const text = new TextDecoder("utf-8", { fatal: true }).decode(csvBytes);
+  const rows = [];
+  let row = [];
+  let index = 0;
+
+  while (index < text.length) {
+    assert.equal(text[index], '"', `expected quoted field at offset ${index}`);
+    index += 1;
+    let value = "";
+
+    while (index < text.length) {
+      if (text[index] !== '"') {
+        value += text[index];
+        index += 1;
+        continue;
+      }
+
+      if (text[index + 1] === '"') {
+        value += '"';
+        index += 2;
+        continue;
+      }
+
+      index += 1;
+      break;
+    }
+
+    row.push(value);
+    if (index === text.length) {
+      rows.push(row);
+      break;
+    }
+
+    if (text[index] === ",") {
+      index += 1;
+      continue;
+    }
+
+    assert.equal(text.slice(index, index + 2), "\r\n");
+    rows.push(row);
+    row = [];
+    index += 2;
+  }
+
+  return rows;
+}
+
 function fakeFile(bytes, options = {}) {
   return {
     size: options.size === undefined ? bytes.byteLength : options.size,
@@ -387,6 +439,29 @@ test("safe report contains only allowed structural data", () => {
   assert.match(report.text, /Issue #6 permanece bloqueante/u);
 });
 
+test("safe report allows only the structural names required by Other Accounts", () => {
+  const marker = "FICTITIOUS-OTHER-SECRET";
+  const report = createSafeReport({
+    phase: "PARSE",
+    status: "BLOCKED",
+    counts: { otherAccounts: 1 },
+    diagnostics: [{
+      code: "MISSING_FIELD",
+      severity: "error",
+      section: "Other Accounts",
+      field: "Account name",
+      recordIndex: 1,
+      notes: marker,
+    }],
+  });
+
+  assert.equal(report.model.counts[0].key, "otherAccounts");
+  assert.equal(report.model.counts[0].label, "Outras contas");
+  assert.equal(report.model.diagnostics[0].section, "Other Accounts");
+  assert.equal(report.model.diagnostics[0].field, "Account name");
+  assert.doesNotMatch(report.text, new RegExp(marker, "u"));
+});
+
 test("unknown diagnostic and free structural names are replaced or omitted", () => {
   const marker = "<img src=x onerror=FICTITIOUS-XSS>";
   const diagnostic = sanitizeDiagnostic({
@@ -442,6 +517,74 @@ test("fixture 18 completes analyze and CSV download preparation", async () => {
   assert.match(new TextDecoder().decode(harness.createdBytes[0]), /^"Group","Title"/u);
 });
 
+test("three-category fixture converts end-to-end with safe coherent counts", async () => {
+  const harness = createHarness();
+  const analyzed = await harness.controller.analyzeFile(
+    fakeFile(fixture("20-three-categories-multiline-observed-structure-crlf.txt")),
+    true,
+  );
+
+  assert.equal(analyzed.view, "parsed");
+  assert.equal(analyzed.canConvert, true);
+  assert.equal(analyzed.metrics.recognized, 4);
+  assert.match(analyzed.report.text, /Registros reconhecidos: 4/u);
+  assert.match(analyzed.report.text, /Websites: 2/u);
+  assert.match(analyzed.report.text, /Aplicações: 1/u);
+  assert.match(analyzed.report.text, /Outras contas: 1/u);
+  assert.doesNotMatch(
+    analyzed.report.text,
+    /FICTITIOUS|multiline\.invalid|usuario-|Linha web|Linha app|Linha other/u,
+  );
+
+  const converted = harness.controller.convert();
+  const countMap = Object.fromEntries(
+    converted.report.model.counts.map((count) => [count.key, count.value]),
+  );
+  const rows = parseQualifiedCsv(harness.createdBytes[0]);
+
+  assert.equal(converted.view, "ready");
+  assert.equal(converted.canDownload, true);
+  assert.equal(countMap.sourceRecords, 4);
+  assert.equal(countMap.exportedRecords, 4);
+  assert.equal(countMap.otherAccounts, 1);
+  assert.match(converted.report.text, /Registros de origem: 4/u);
+  assert.match(converted.report.text, /Registros exportados: 4/u);
+  assert.match(converted.report.text, /Outras contas: 1/u);
+  assert.doesNotMatch(
+    converted.report.text,
+    /FICTITIOUS|multiline\.invalid|usuario-|Linha web|Linha app|Linha other/u,
+  );
+  assert.deepEqual(rows[0], ["Group", "Title", "Username", "Password", "URL", "Notes"]);
+  assert.equal(rows.length, 5);
+  assert.ok(rows.every((row) => row.length === 6));
+  assert.deepEqual(rows[1], [
+    "Websites",
+    "Portal Multilinha A Fictício",
+    "usuario-web-a-ficticio",
+    "FICTITIOUS-WEB-A",
+    "https://web-a-multiline.invalid/entrada",
+    "Linha web A1 fictícia\n---\nLinha web A3 fictícia",
+  ]);
+  assert.equal(rows[2][0], "Websites");
+  assert.equal(rows[2][5], "Parágrafo web B1 fictício\n\n---\n\nParágrafo web B2 fictício");
+  assert.deepEqual(rows[3], [
+    "Applications",
+    "Aplicativo Multilinha Fictício",
+    "usuario-app-ficticio",
+    "FICTITIOUS-APP",
+    "",
+    "Linha app 1 fictícia\n---\nLinha app 3 fictícia",
+  ]);
+  assert.deepEqual(rows[4], [
+    "Other Accounts",
+    "Conta Genérica Multilinha Fictícia",
+    "usuario-other-ficticio",
+    "FICTITIOUS-OTHER",
+    "",
+    "Linha other 1 fictícia\n---\nLinha other 3 fictícia",
+  ]);
+});
+
 test("fixture 04 remains convertible with safe warnings", async () => {
   const harness = createHarness();
   const analyzed = await harness.controller.analyzeFile(
@@ -491,10 +634,75 @@ test("globally blocked fixture 16 never calls the serializer", async () => {
   assert.equal(harness.createdBytes.length, 0);
 });
 
-for (const name of [
-  "03-notes-multiline-lf.txt",
-  "17-comment-multiline-hypothetical-negative-lf.txt",
-]) {
+test("missing Account name in Other Accounts is safely diagnosed and globally blocked", async () => {
+  const harness = createHarness();
+  const source = textBytes([
+    "Other Accounts",
+    "",
+    "Login name:",
+    "Login: other-missing-title-fictitious",
+    "Password: FICTITIOUS-OTHER-MISSING-TITLE",
+    "Comment: comentário fictício",
+  ]);
+  const state = await harness.controller.analyzeFile(fakeFile(source), true);
+
+  assert.equal(state.view, "blocked");
+  assert.equal(state.canConvert, false);
+  assert.equal(state.canDownload, false);
+  assert.equal(harness.serializeCalls(), 0);
+  assert.equal(harness.createdBytes.length, 0);
+  assert.match(state.report.text, /MISSING_FIELD/u);
+  assert.match(state.report.text, /seção=Other Accounts/u);
+  assert.match(state.report.text, /campo=Account name/u);
+  assert.doesNotMatch(state.report.text, /FICTITIOUS|other-missing-title|comentário fictício/u);
+});
+
+test("unknown Other Accounts field blocks the UI without partial download", async () => {
+  const harness = createHarness();
+  const state = await harness.controller.analyzeFile(
+    fakeFile(fixture("21-other-accounts-invalid-field-negative-lf.txt")),
+    true,
+  );
+
+  assert.equal(state.view, "blocked");
+  assert.equal(state.canConvert, false);
+  assert.equal(state.canDownload, false);
+  assert.equal(harness.serializeCalls(), 0);
+  assert.equal(harness.createdBytes.length, 0);
+  assert.match(state.report.text, /UNKNOWN_FIELD/u);
+  assert.doesNotMatch(state.report.text, /FICTITIOUS-UNSUPPORTED-OTHER/u);
+});
+
+test("non-empty Other Accounts Login name keeps CSV and download globally blocked", async () => {
+  const harness = createHarness();
+  const source = textBytes([
+    "Other Accounts",
+    "",
+    "Account name: Conta fictícia bloqueada",
+    "Login name: Perfil fictício sem destino",
+    "Login: other-account-name-fictitious",
+    "Password: FICTITIOUS-OTHER-ACCOUNT-NAME",
+    "Comment: comentário fictício",
+  ]);
+  const analyzed = await harness.controller.analyzeFile(fakeFile(source), true);
+
+  assert.equal(analyzed.view, "parsed");
+  assert.equal(analyzed.canConvert, true);
+  assert.match(analyzed.report.text, /Outras contas: 1/u);
+
+  const converted = harness.controller.convert();
+  assert.equal(converted.view, "blocked");
+  assert.equal(converted.canDownload, false);
+  assert.equal(converted.downloadUrl, null);
+  assert.deepEqual(reportCodes(converted), ["ACCOUNT_NAME_UNMAPPED"]);
+  assert.equal(harness.createdBytes.length, 0);
+  assert.doesNotMatch(
+    converted.report.text,
+    /Perfil fictício|other-account-name|FICTITIOUS-OTHER-ACCOUNT-NAME|comentário fictício/u,
+  );
+});
+
+for (const name of ["03-notes-multiline-lf.txt"]) {
   test(`multiline negative fixture ${name} never enables conversion`, async () => {
     const harness = createHarness();
     const state = await harness.controller.analyzeFile(fakeFile(fixture(name)), true);
@@ -505,6 +713,22 @@ for (const name of [
     assert.equal(harness.createdBytes.length, 0);
   });
 }
+
+test("fixture 17 is parsed with multiline preserved and then blocked only by accountName", async () => {
+  const harness = createHarness();
+  const analyzed = await harness.controller.analyzeFile(
+    fakeFile(fixture("17-comment-multiline-hypothetical-negative-lf.txt")),
+    true,
+  );
+
+  assert.equal(analyzed.view, "parsed");
+  assert.equal(analyzed.canConvert, true);
+  const converted = harness.controller.convert();
+  assert.equal(converted.view, "blocked");
+  assert.deepEqual(reportCodes(converted), ["ACCOUNT_NAME_UNMAPPED"]);
+  assert.equal(converted.canDownload, false);
+  assert.equal(harness.createdBytes.length, 0);
+});
 
 test("fictional confirmation is required before reading", async () => {
   let reads = 0;

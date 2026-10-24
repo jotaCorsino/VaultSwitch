@@ -31,7 +31,13 @@
     "OK_V0_EXPERIMENTAL",
   ]);
   const ALLOWED_SEVERITIES = new Set(["error", "warning"]);
-  const ALLOWED_SECTIONS = new Set(["Websites", "Applications", "Notes", "Sites"]);
+  const ALLOWED_SECTIONS = new Set([
+    "Websites",
+    "Applications",
+    "Other Accounts",
+    "Notes",
+    "Sites",
+  ]);
   const ALLOWED_FIELDS = new Set([
     "Website name",
     "Website URL",
@@ -40,6 +46,7 @@
     "Password",
     "Comment",
     "Application",
+    "Account name",
     "type",
     "title",
     "accountName",
@@ -89,6 +96,7 @@
     Object.freeze({ key: "blockedRecords", label: "Registros bloqueados" }),
     Object.freeze({ key: "websites", label: "Websites" }),
     Object.freeze({ key: "applications", label: "Aplicações" }),
+    Object.freeze({ key: "otherAccounts", label: "Outras contas" }),
     Object.freeze({ key: "unknownSections", label: "Seções desconhecidas" }),
     Object.freeze({ key: "errors", label: "Problemas" }),
     Object.freeze({ key: "warnings", label: "Avisos" }),
