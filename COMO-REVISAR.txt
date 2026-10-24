@@ -26,5 +26,5 @@ IMPORTANTE
 
 IDENTIFICAÇÃO
 Projeto: VAULTSWITCH
-Revisão: layout-r2
+Revisão: layout-r3
 Origem do modo revisão: Technolife REV-004.5 m0.3 (branch de testes).

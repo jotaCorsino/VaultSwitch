@@ -1,4 +1,4 @@
-Ícones Tabler utilizados: arrows-exchange e file-type-txt.
+Ícones Tabler utilizados: arrows-exchange, file-type-txt, file-export e wifi-off.
 Fonte: https://tabler.io/icons
 
 MIT License
