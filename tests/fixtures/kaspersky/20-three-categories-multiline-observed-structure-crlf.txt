@@ -1,0 +1,50 @@
+﻿Websites
+
+Website name: Portal Multilinha A Fictício
+Website URL: https://web-a-multiline.invalid/entrada
+Login name:
+Login: usuario-web-a-ficticio
+Password: FICTITIOUS-WEB-A
+Comment: Linha web A1 fictícia
+---
+Linha web A3 fictícia
+
+---
+
+Website name: Portal Multilinha B Fictício
+Website URL: https://web-b-multiline.invalid/entrada
+Login name:
+Login: usuario-web-b-ficticio
+Password: FICTITIOUS-WEB-B
+Comment: Parágrafo web B1 fictício
+
+---
+
+Parágrafo web B2 fictício
+
+---
+
+Applications
+
+Application: Aplicativo Multilinha Fictício
+Login name:
+Login: usuario-app-ficticio
+Password: FICTITIOUS-APP
+Comment: Linha app 1 fictícia
+---
+Linha app 3 fictícia
+
+---
+
+Other Accounts
+
+Account name: Conta Genérica Multilinha Fictícia
+Login name:
+Login: usuario-other-ficticio
+Password: FICTITIOUS-OTHER
+Comment: Linha other 1 fictícia
+---
+Linha other 3 fictícia
+
+---
+

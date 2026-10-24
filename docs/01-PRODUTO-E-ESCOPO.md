@@ -16,7 +16,7 @@ Usuário técnico realizando sua própria migração de credenciais entre Window
 
 1. selecionar um arquivo TXT local;
 2. identificar se o arquivo possui estrutura reconhecível;
-3. extrair registros de websites e aplicações suportados;
+3. extrair registros suportados de websites, aplicações e outras contas;
 4. normalizar os dados;
 5. informar contagens e avisos sem expor senhas por padrão;
 6. gerar CSV;

@@ -56,10 +56,32 @@
         notes: "Comment",
       }),
     }),
+    "Other Accounts": Object.freeze({
+      type: "other",
+      group: "Other Accounts",
+      structuralField: "Account name",
+      fields: Object.freeze([
+        "Account name",
+        "Login name",
+        "Login",
+        "Password",
+        "Comment",
+      ]),
+      mapping: Object.freeze({
+        title: "Account name",
+        accountName: "Login name",
+        username: "Login",
+        password: "Password",
+        notes: "Comment",
+      }),
+    }),
   });
 
   const RECOGNIZED_SECTION_NAMES = Object.freeze(Object.keys(SECTION_DEFINITIONS));
   const RECOGNIZED_SECTION_SET = new Set(RECOGNIZED_SECTION_NAMES);
+  const RECOGNIZED_FIELD_SET = new Set(
+    RECOGNIZED_SECTION_NAMES.flatMap((name) => SECTION_DEFINITIONS[name].fields),
+  );
   const UNSUPPORTED_SECTION_NAMES = new Set(["Notes"]);
   const UNSUPPORTED_LOCALE_HEADERS = new Set(["Sites"]);
 
@@ -103,6 +125,7 @@
 
     const websites = state.records.filter((record) => record.type === "website").length;
     const applications = state.records.filter((record) => record.type === "application").length;
+    const otherAccounts = state.records.filter((record) => record.type === "other").length;
 
     return {
       blocked: errors > 0,
@@ -113,6 +136,7 @@
         blockedRecords: state.blockedRecords,
         websites,
         applications,
+        otherAccounts,
         unknownSections: state.unknownSections,
         errors,
         warnings,
@@ -180,11 +204,15 @@
       return { error: "EMPTY_FILE" };
     }
 
-    if (/\r(?!\n)/u.test(text)) {
+    if (/\r(?!\r?\n)/u.test(text)) {
       return { error: "INVALID_LINE_ENDING" };
     }
 
-    return { text: text.replace(/\r\n/gu, "\n") };
+    return {
+      text: text
+        .replace(/\r\r\n/gu, "\n")
+        .replace(/\r\n/gu, "\n"),
+    };
   }
 
   function createRecordState(section, definition, index) {
@@ -196,6 +224,8 @@
       seen: new Set(),
       hasContent: false,
       hasError: false,
+      commentOpen: false,
+      commentLines: [],
     };
   }
 
@@ -213,6 +243,20 @@
   function lineUsesField(line, field) {
     const colonIndex = line.indexOf(":");
     return colonIndex >= 0 && line.slice(0, colonIndex) === field;
+  }
+
+  function looksLikeCompleteRecordStart(lines, lineIndex, definition) {
+    if (!definition || !lineUsesField(lines[lineIndex], definition.structuralField)) {
+      return false;
+    }
+
+    for (let offset = 0; offset < definition.fields.length; offset += 1) {
+      if (!lineUsesField(lines[lineIndex + offset] || "", definition.fields[offset])) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   function buildLineLookahead(lines) {
@@ -296,6 +340,26 @@
     );
   }
 
+  function startsDefiniteUnknownSection(lines, lookahead, lineIndex) {
+    const line = lines[lineIndex];
+    if (!line || line.includes(":") || line.trim() === "---") {
+      return false;
+    }
+
+    const candidateIndex = lookahead.nextSectionEvidenceIndex[lineIndex + 1];
+    if (candidateIndex === -1) {
+      return false;
+    }
+
+    const candidate = lines[candidateIndex];
+    const colonIndex = candidate.indexOf(":");
+    if (colonIndex <= 0) {
+      return false;
+    }
+
+    return !RECOGNIZED_FIELD_SET.has(candidate.slice(0, colonIndex));
+  }
+
   function parseKasperskyTxtBytes(input, options) {
     const configuredMaxBytes = options && options.maxBytes !== undefined
       ? options.maxBytes
@@ -313,12 +377,69 @@
     const state = createResultState();
     const lines = decoded.text.split("\n");
     const lookahead = buildLineLookahead(lines);
-    const nextRecordIndex = { Websites: 1, Applications: 1 };
+    const nextRecordIndex = {
+      Websites: 1,
+      Applications: 1,
+      "Other Accounts": 1,
+    };
     let section = null;
     let definition = null;
     let record = null;
     let skippingUnsupportedSection = false;
     let reportedInvalidSectionStart = false;
+
+    function hasCommentBoundaryDecoration(commentLines) {
+      if (commentLines.length === 0) {
+        return false;
+      }
+
+      const lastLine = commentLines[commentLines.length - 1];
+      return lastLine === "" || lastLine.trim() === "---";
+    }
+
+    function stripCommentBoundaryDecoration(commentLines) {
+      let contentEnd = commentLines.length;
+
+      while (contentEnd > 0 && commentLines[contentEnd - 1] === "") {
+        contentEnd -= 1;
+      }
+
+      if (contentEnd > 0 && commentLines[contentEnd - 1].trim() === "---") {
+        contentEnd -= 1;
+        while (contentEnd > 0 && commentLines[contentEnd - 1] === "") {
+          contentEnd -= 1;
+        }
+      }
+
+      return commentLines.slice(0, contentEnd);
+    }
+
+    function commitCommentLines(stripBoundary) {
+      if (!record || !record.commentOpen) {
+        return;
+      }
+
+      const continuation = stripBoundary
+        ? stripCommentBoundaryDecoration(record.commentLines)
+        : record.commentLines;
+
+      if (continuation.length > 0) {
+        record.values.Comment += `\n${continuation.join("\n")}`;
+      }
+
+      record.commentLines = [];
+      record.commentOpen = false;
+    }
+
+    function sectionStartsCompleteRecord(sectionName, lineIndex) {
+      const sectionDefinition = SECTION_DEFINITIONS[sectionName];
+      const nextLine = nextNonBlankLine(lines, lookahead, lineIndex + 1);
+      return nextLine !== undefined && looksLikeCompleteRecordStart(
+        lines,
+        nextLine.index,
+        sectionDefinition,
+      );
+    }
 
     function ensureRecord() {
       if (!record) {
@@ -342,11 +463,13 @@
       addDiagnostic(state, code, "error", coordinates);
     }
 
-    function finalizeRecord() {
+    function finalizeRecord(stripCommentBoundary = false) {
       if (!record || !record.hasContent) {
         record = null;
         return;
       }
+
+      commitCommentLines(stripCommentBoundary);
 
       const recordWarnings = [];
 
@@ -420,6 +543,53 @@
 
     for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
       const line = lines[lineIndex];
+
+      if (record && record.commentOpen) {
+        const hasBoundaryDecoration = hasCommentBoundaryDecoration(record.commentLines);
+        const startsStructuralRecord = lineUsesField(
+          line,
+          definition.structuralField,
+        );
+        const startsCompleteRecord = startsStructuralRecord && looksLikeCompleteRecordStart(
+          lines,
+          lineIndex,
+          definition,
+        );
+        const recognizedSection = RECOGNIZED_SECTION_SET.has(line);
+        const startsCompleteSection = recognizedSection && sectionStartsCompleteRecord(
+          line,
+          lineIndex,
+        );
+        const startsUnsupportedSection = UNSUPPORTED_SECTION_NAMES.has(line) ||
+          UNSUPPORTED_LOCALE_HEADERS.has(line);
+        const startsUnknownSection = startsDefiniteUnknownSection(
+          lines,
+          lookahead,
+          lineIndex,
+        ) || (
+          record.values.Comment === "" &&
+          record.commentLines.every((commentLine) => commentLine === "") &&
+          startsUnknownBlock(lines, lookahead, lineIndex)
+        );
+
+        if (
+          (startsStructuralRecord && (hasBoundaryDecoration || startsCompleteRecord)) ||
+          (recognizedSection && (hasBoundaryDecoration || startsCompleteSection)) ||
+          (hasBoundaryDecoration && (startsUnsupportedSection || startsUnknownSection))
+        ) {
+          commitCommentLines(true);
+          finalizeRecord();
+          lineIndex -= 1;
+          continue;
+        }
+
+        if (recognizedSection) {
+          reportRecordError("AMBIGUOUS_MULTILINE");
+        }
+
+        record.commentLines.push(line);
+        continue;
+      }
 
       if (RECOGNIZED_SECTION_SET.has(line)) {
         if (record && record.hasContent) {
@@ -547,9 +717,12 @@
 
       activeRecord.seen.add(field);
       activeRecord.values[field] = value;
+      if (field === "Comment") {
+        activeRecord.commentOpen = true;
+      }
     }
 
-    finalizeRecord();
+    finalizeRecord(true);
 
     if (state.records.length === 0 && state.blockedRecords === 0) {
       addDiagnostic(state, "NO_SUPPORTED_RECORDS", "error");

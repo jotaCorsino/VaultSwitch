@@ -1,6 +1,6 @@
 # Fixtures fictícias do TXT do Kaspersky
 
-Todos os arquivos desta pasta foram escritos do zero para a FMT-001. A fixture `18` reproduz somente características **estruturais não sensíveis** de uma amostra examinada localmente; nenhum dado, domínio, identificador ou segredo do arquivo original foi copiado. Eles não derivam de cofres, exportações reais, pessoas, contas ou serviços existentes.
+Todos os arquivos desta pasta foram escritos do zero. As fixtures `18` e `20` reproduzem somente características **estruturais não sensíveis** documentadas; nenhum dado, domínio, identificador ou segredo dos arquivos examinados foi copiado. Elas não derivam de cofres, pessoas, contas ou serviços existentes.
 
 Convenções de segurança:
 
@@ -30,12 +30,16 @@ Convenções de segurança:
 | `14-duplicate-field-negative-lf.txt` | UTF-8, LF | Negativo inventado | Registro conhecido com dois rótulos `Login` | `DUPLICATE_FIELD`; bloquear sem escolher valor |
 | `15-unknown-field-negative-lf.txt` | UTF-8, LF | Negativo inventado | Registro conhecido com `Invented field` | `UNKNOWN_FIELD`; preservar a ocorrência e bloquear |
 | `16-mixed-supported-unknown-negative-lf.txt` | UTF-8, LF | Negativo inventado | Website reconhecível seguido por seção/registro desconhecido | `UNKNOWN_SECTION`; bloquear o resultado global sem exportação parcial |
-| `17-comment-multiline-hypothetical-negative-lf.txt` | UTF-8, LF | Hipótese negativa inventada | `Comment` seguido por linha sem rótulo | `AMBIGUOUS_MULTILINE`; bloquear o registro |
+| `17-comment-multiline-hypothetical-negative-lf.txt` | UTF-8, LF | Fixture histórica inventada; nome legado preservado | `Comment` seguido por linha sem rótulo | Preservar a continuação do `Comment`; não bloquear |
 | `18-websites-blank-separated-crlf.txt` | UTF-8 sem BOM, CRLF, sem newline final | Separação por linha em branco observada em um exemplo local; **todos os valores fictícios** | Dois websites, linhas em branco entre os blocos, URL fictícia com porta, `Login name` vazio e comentários opcionais | Reconhecer dois registros sem delimitador `---` |
-| `19-comment-delimiter-ambiguous-hypothetical-lf.txt` | UTF-8, LF | Hipótese negativa inventada para COMMENT-INV-001; **não observada em exportação KPM** | O mesmo TXT pode representar dois websites ou um website cujo `Comment` contém `---` e linhas semelhantes a campos | Documentar que o parser atual aceita dois registros sem bloquear; não homologar multiline por esta fixture |
+| `19-comment-delimiter-ambiguous-hypothetical-lf.txt` | UTF-8, LF | Hipótese negativa inventada para COMMENT-INV-001; **não observada em exportação KPM** | O mesmo TXT pode representar dois websites ou um website cujo `Comment` contém `---` e linhas semelhantes a campos | Documentar que a política contextual interpreta dois registros; manter explícito o risco residual |
+| `20-three-categories-multiline-observed-structure-crlf.txt` | UTF-8 com BOM; CRLF; `\r\r\n` somente nas continuações de `Other Accounts` | Fixture inventada modelada pela estrutura observada em 24/10/2026; não copia valores de exportação | Websites, Applications e Other Accounts; multiline; `---` interno com/sem linhas vazias; delimitadores verdadeiros e final | Reconhecer 4 registros, normalizar cada quebra lógica para `\n` e preservar `Comment` em `notes` |
+| `21-other-accounts-invalid-field-negative-lf.txt` | UTF-8, LF | Negativo inventado | `Other Accounts` com campo desconhecido antes de `Comment` | `UNKNOWN_FIELD`; bloquear globalmente e não exportar CSV parcial |
 
 ## Observação sobre expectativas
 
-Não existe parser nesta tarefa. As expectativas acima são oráculos documentais para PARSE-001 depois que o contrato for homologado. Os testes da FMT-001 verificam apenas propriedades físicas dos arquivos, ausência de dados reais conhecidos e coerência com este inventário. Todos os casos são inventados; os itens classificados como negativos foram desenhados para provocar bloqueio, não para representar saídas observadas do KPM.
+As expectativas são oráculos documentais exercitados pelo parser e pelo serializador atuais. Todos os valores são inventados; os itens classificados como negativos foram desenhados para provocar bloqueio, não para representar saídas observadas do KPM.
 
-A fixture `19` foi acrescentada posteriormente pela investigação COMMENT-INV-001. Ela é um contraexemplo sintético: reproduz uma ambiguidade do contrato/parser, mas não é evidência de que o exportador KPM produza essa sequência. Seu teste observacional fica separado em `tests/comment-investigation.test.js` para não confundir a limitação conhecida com suporte homologado.
+A fixture `19` foi acrescentada posteriormente pela investigação COMMENT-INV-001. Ela é um contraexemplo sintético: reproduz uma ambiguidade do contrato/parser, mas não é evidência de que o exportador KPM produza essa sequência. Seu teste observacional fica separado em `tests/comment-investigation.test.js` para manter explícito o risco residual.
+
+As fixtures `20` e `21` foram acrescentadas pela implementação PARSE-COMMENT-001. A estrutura da `20` reproduz somente características não sensíveis registradas nas Issues #6, #15 e #17; nomes, URLs, logins, senhas e comentários foram escritos do zero. O suporte funcional aos padrões observados não elimina a ambiguidade teórica da fixture `19` nem autoriza uso com cofres reais.

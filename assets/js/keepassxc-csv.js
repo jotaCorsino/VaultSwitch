@@ -37,6 +37,7 @@
     "blockedRecords",
     "websites",
     "applications",
+    "otherAccounts",
     "unknownSections",
     "errors",
     "warnings",
@@ -170,12 +171,14 @@
     const applications = records.filter(
       (record) => record && record.type === "application",
     ).length;
+    const otherAccounts = records.filter((record) => record && record.type === "other").length;
 
     return (
       counts.supportedRecords === records.length &&
       counts.websites === websites &&
       counts.applications === applications &&
-      websites + applications === records.length &&
+      counts.otherAccounts === otherAccounts &&
+      websites + applications + otherAccounts === records.length &&
       counts.errors === diagnosticSummary.errors &&
       counts.warnings === diagnosticSummary.warnings &&
       diagnosticsByCodeMatch(counts.diagnosticsByCode, diagnosticSummary.byCode)
@@ -201,13 +204,18 @@
       return { recordIndex, field: "title" };
     }
 
-    if (record.type !== "website" && record.type !== "application") {
+    if (
+      record.type !== "website" &&
+      record.type !== "application" &&
+      record.type !== "other"
+    ) {
       return { recordIndex, field: "type" };
     }
 
     if (
       (record.type === "website" && record.group !== "Websites") ||
-      (record.type === "application" && record.group !== "Applications")
+      (record.type === "application" && record.group !== "Applications") ||
+      (record.type === "other" && record.group !== "Other Accounts")
     ) {
       return { recordIndex, field: "group" };
     }
@@ -311,6 +319,7 @@
         exportedRecords: parseResult.records.length,
         websites: parseResult.counts.websites,
         applications: parseResult.counts.applications,
+        otherAccounts: parseResult.counts.otherAccounts,
         sourceWarnings: diagnosticSummary.warnings,
         outputBytes: csvBytes.byteLength,
       },

@@ -5,3 +5,4 @@ tests/fixtures/kaspersky/05-utf8-bom-accents-lf.txt -text -eol
 tests/fixtures/kaspersky/11-windows-1252-hypothetical-crlf.txt -text -eol -diff
 tests/fixtures/kaspersky/12-utf16le-hypothetical.txt -text -eol -diff
 tests/fixtures/kaspersky/18-websites-blank-separated-crlf.txt -text -eol -diff
+tests/fixtures/kaspersky/20-three-categories-multiline-observed-structure-crlf.txt -text -eol -diff

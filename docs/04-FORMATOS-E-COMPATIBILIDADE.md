@@ -23,19 +23,17 @@ O VaultSwitch não reutilizará o código dessa implementação. O contrato ser�
 
 Contrato FMT-001 homologado para escopo restrito (não é declaração de compatibilidade universal): [Contrato do TXT do Kaspersky Password Manager](06-CONTRATO-TXT-KASPERSKY.md).
 
-## Compatibilidade ainda não comprovada
+## Compatibilidade funcional em Draft
 
-O formato TXT pode variar por versão, idioma e conteúdo. A FMT-001 e a PARSE-001 homologaram somente um subconjunto e permanecem lacunas quanto a:
+O parser funcional reconhece, nas estruturas documentadas e cobertas por fixtures fictícias:
 
-- rótulos reais da versão usada;
-- idioma dos rótulos;
-- separadores entre registros;
-- representação de notas multilinha;
-- codificação;
-- campos vazios;
-- caracteres especiais.
+- `Websites`, `Applications` e `Other Accounts` com os rótulos ingleses contratados;
+- `Comment` multilinha, inclusive linhas vazias e linhas isoladas `---`, com fronteiras contextuais;
+- UTF-8 estrito, BOM UTF-8 opcional, LF, CRLF e a sequência observada `\r\r\n` normalizada como uma quebra lógica;
+- campos vazios e caracteres especiais preservados;
+- bloqueio global diante de campos, seções, codificações ou estruturas desconhecidas identificáveis.
 
-Nenhum suporte será declarado apenas por inferência.
+Esse suporte permanece em Draft. O formato TXT pode variar por versão, idioma e conteúdo; rótulos localizados, outras categorias, outras codificações e colisões estruturais não estão homologados. Nenhum suporte universal será declarado por inferência e o uso com cofres reais continua proibido.
 
 ## Destino — KeePassXC
 
@@ -53,9 +51,9 @@ Group,Title,Username,Password,URL,Notes
 
 O campo `Login name` do Kaspersky foi preservado em `accountName` no parser, mas **não tem mapeamento comprovado** nas seis colunas acima. Na CSV-001, se houver `accountName` não vazio, o serializador V0 deverá **bloquear** a geração e reportar `ACCOUNT_NAME_UNMAPPED`, até uma estratégia de destino sem perda ser homologada. Não incluir coluna extra supondo que o KeePassXC a importará.
 
-O campo `Comment` mapeia diretamente para `Notes`. O serializador deve preservar inclusive texto com múltiplas linhas **quando já fornecido em um registro normalizado fictício**; isso não significa que o parser saiba reconhecer esses comentários no TXT real.
+O campo `Comment` mapeia diretamente para `Notes`. O serializador preserva texto multilinha recebido do parser, e os testes ponta a ponta com fixtures fictícias verificam esse conteúdo nas três categorias suportadas.
 
-A [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6) é requisito bloqueante antes de qualquer uso real: a linha `---` pode ser um delimitador ou texto livre de `Comment`. A compatibilidade será considerada homologada somente após resolução dessa lacuna, tratamento do `accountName` não vazio e teste de importação ponta a ponta com dados fictícios.
+A [Issue #6 — REQ-COMMENT-001](https://github.com/jotaCorsino/VaultSwitch/issues/6) permanece aberta e bloqueante para uso real: a mesma sequência de linhas vazias e `---` foi observada como delimitador e como texto livre de `Comment`. A implementação adota uma decisão contextual para os padrões comuns observados, sem alegar que a gramática seja universal. Também continuam pendentes o destino de `accountName` não vazio e a validação de importação no KeePassXC em QA-001.
 
 ## Limitação importante
 

@@ -112,6 +112,7 @@ function makeSource(records, diagnostics = []) {
 
   const websites = records.filter((record) => record.type === "website").length;
   const applications = records.filter((record) => record.type === "application").length;
+  const otherAccounts = records.filter((record) => record.type === "other").length;
 
   return {
     blocked: errors > 0,
@@ -122,6 +123,7 @@ function makeSource(records, diagnostics = []) {
       blockedRecords: 0,
       websites,
       applications,
+      otherAccounts,
       unknownSections: 0,
       errors,
       warnings,
@@ -169,6 +171,56 @@ test("exports both blank-delimited fixture 18 records in source order", () => {
   assert.equal(rows[2][5], "Comentário inteiramente inventado, teste.");
 });
 
+test("exports all three observed categories with multiline Notes intact", () => {
+  const result = serializeFixture("20-three-categories-multiline-observed-structure-crlf.txt");
+  const rows = parseQualifiedCsv(result.csvBytes);
+
+  assert.equal(result.blocked, false);
+  assert.equal(rows.length, 5);
+  assert.equal(result.counts.sourceRecords, 4);
+  assert.equal(result.counts.exportedRecords, 4);
+  assert.equal(result.counts.websites, 2);
+  assert.equal(result.counts.applications, 1);
+  assert.equal(result.counts.otherAccounts, 1);
+  assert.deepEqual(rows[1], [
+    "Websites",
+    "Portal Multilinha A Fictício",
+    "usuario-web-a-ficticio",
+    "FICTITIOUS-WEB-A",
+    "https://web-a-multiline.invalid/entrada",
+    "Linha web A1 fictícia\n---\nLinha web A3 fictícia",
+  ]);
+  assert.equal(rows[2][5], "Parágrafo web B1 fictício\n\n---\n\nParágrafo web B2 fictício");
+  assert.deepEqual(rows[3], [
+    "Applications",
+    "Aplicativo Multilinha Fictício",
+    "usuario-app-ficticio",
+    "FICTITIOUS-APP",
+    "",
+    "Linha app 1 fictícia\n---\nLinha app 3 fictícia",
+  ]);
+  assert.deepEqual(rows[4], [
+    "Other Accounts",
+    "Conta Genérica Multilinha Fictícia",
+    "usuario-other-ficticio",
+    "FICTITIOUS-OTHER",
+    "",
+    "Linha other 1 fictícia\n---\nLinha other 3 fictícia",
+  ]);
+});
+
+test("never exports an Other Accounts record containing an unknown field", () => {
+  const parsed = parseKasperskyTxtBytes(
+    fixture("21-other-accounts-invalid-field-negative-lf.txt"),
+  );
+  const result = serializeKeePassXcCsv(parsed);
+
+  assert.equal(parsed.blocked, true);
+  assert.equal(result.blocked, true);
+  assert.deepEqual(diagnosticCodes(result), ["SOURCE_BLOCKED"]);
+  assert.equal(Object.hasOwn(result, "csvBytes"), false);
+});
+
 test("blocks fixture 01 when accountName has no homologated destination", () => {
   const result = serializeFixture("01-websites-lf.txt");
 
@@ -188,7 +240,7 @@ test("never exports the recognized record retained by blocked fixture 16", () =>
   assert.equal(result.counts.exportedRecords, 0);
 });
 
-for (const name of ["03-notes-multiline-lf.txt", "17-comment-multiline-hypothetical-negative-lf.txt"]) {
+for (const name of ["03-notes-multiline-lf.txt"]) {
   test(`does not export blocked fixture ${name}`, () => {
     const result = serializeFixture(name);
 
@@ -260,6 +312,29 @@ test("keeps empty application URL and Notes", () => {
     "FICTITIOUS-PASSWORD",
     "",
     "",
+  ]);
+});
+
+test("accepts a normalized Other Accounts record with an empty URL", () => {
+  const record = makeRecord({
+    type: "other",
+    title: "Synthetic other account",
+    url: "",
+    notes: "First synthetic line\nSecond synthetic line",
+    group: "Other Accounts",
+  });
+  const result = serializeKeePassXcCsv(makeSource([record]));
+  const rows = parseQualifiedCsv(result.csvBytes);
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.counts.otherAccounts, 1);
+  assert.deepEqual(rows[1], [
+    "Other Accounts",
+    "Synthetic other account",
+    "synthetic-user",
+    "FICTITIOUS-PASSWORD",
+    "",
+    "First synthetic line\nSecond synthetic line",
   ]);
 });
 
@@ -356,6 +431,7 @@ test("rejects empty title and inconsistent type/group pairs", () => {
   for (const record of [
     makeRecord({ title: "" }),
     makeRecord({ type: "application", group: "Websites" }),
+    makeRecord({ type: "other", group: "Applications" }),
     makeRecord({ type: "unknown" }),
   ]) {
     const result = serializeKeePassXcCsv(makeSource([record]));
@@ -395,10 +471,27 @@ test("blocks all output when any accountName is non-empty, including whitespace"
   }
 });
 
+test("keeps ACCOUNT_NAME_UNMAPPED blocking for Other Accounts", () => {
+  const record = makeRecord({
+    type: "other",
+    title: "Synthetic other account",
+    accountName: "Synthetic account name",
+    url: "",
+    group: "Other Accounts",
+  });
+  const result = serializeKeePassXcCsv(makeSource([record]));
+
+  assert.equal(result.blocked, true);
+  assert.deepEqual(diagnosticCodes(result), ["ACCOUNT_NAME_UNMAPPED"]);
+  assert.equal(Object.hasOwn(result, "csvBytes"), false);
+  assert.doesNotMatch(JSON.stringify(result.diagnostics), /Synthetic account name/u);
+});
+
 test("rejects inconsistent source counts", () => {
   const mutations = [
     (source) => { source.counts.supportedRecords += 1; },
     (source) => { source.counts.websites = 0; },
+    (source) => { source.counts.otherAccounts = 1; },
     (source) => { source.counts.warnings = 1; },
     (source) => { source.counts.diagnosticsByCode.EXTRA = 1; },
     (source) => { source.counts.diagnosticsByCode = null; },

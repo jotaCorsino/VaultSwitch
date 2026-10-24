@@ -5,7 +5,7 @@ Website URL: https://unknown-field.example.invalid
 Login name: Perfil desconhecido fictício
 Login: unknown-field-user
 Password: FICTITIOUS-UNKNOWN-FIELD
-Comment: Registro conhecido com um rótulo deliberadamente inventado.
 Invented field: FICTITIOUS-UNSUPPORTED-VALUE
+Comment: Registro conhecido com um rótulo deliberadamente inventado.
 
 ---
