@@ -1,9 +1,0 @@
-Websites
-
-Website URL: https://missing-field.example.invalid
-Login name: Perfil sem identificador fictício
-Login: missing-field-user
-Password: FICTITIOUS-MISSING-FIELD
-Comment: Website name foi omitido intencionalmente neste caso negativo inventado.
-
----

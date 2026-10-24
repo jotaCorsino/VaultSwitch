@@ -1,0 +1,30 @@
+VAULTSWITCH — PRÉVIA COM MODO DE REVISÃO
+==========================================
+
+COMO ABRIR
+1. Extraia o ZIP inteiro em uma pasta.
+2. Abra index.html no Chrome ou Edge.
+3. Clique em "Ativar modo de revisão" no canto da página.
+4. Clique no elemento que deseja comentar; descreva a alteração e salve.
+5. Repita em outras partes do layout, incluindo tela pequena se desejar.
+6. Clique em "Baixar Revisão" e envie o arquivo .json nesta conversa.
+
+O modo revisão é independente do conversor e não altera seu funcionamento.
+O ZIP contém apenas index.html e os arquivos necessários em _review/.
+Não é necessário instalar o Kaspersky ou KeePassXC nem configurar servidor.
+
+IMPORTANTE
+- Não mova index.html para fora da pasta, pois ele usa arquivos de _review/.
+- Os comentários ficam no armazenamento local deste navegador (quando disponível).
+- Se o navegador restringir salvamento no modo file://, exporte o JSON
+  antes de fechar a aba.
+- Caso o módulo não inicialize ao abrir diretamente o arquivo local,
+  na pasta extraída execute "python -m http.server 4174" e abra
+  http://127.0.0.1:4174 no navegador.
+- A revisão é exclusiva desta prévia. Não inclui login nem envio online.
+- Não inclua senhas reais nos comentários; use somente observações de design.
+
+IDENTIFICAÇÃO
+Projeto: VAULTSWITCH
+Revisão: layout-r1
+Origem do modo revisão: Technolife REV-004.5 m0.3 (branch de testes).
