@@ -183,13 +183,17 @@ test("16 blocks the whole result while retaining the supported record in memory"
   assert.ok(diagnosticCodes(result).includes("UNKNOWN_SECTION"));
 });
 
-test("17 blocks an ambiguous multiline Comment separately from Notes", () => {
+test("17 preserves a multiline Comment that was provisionally blocked", () => {
   const result = parseFixture("17-comment-multiline-hypothetical-negative-lf.txt");
 
-  assert.equal(result.blocked, true);
-  assert.equal(result.records.length, 0);
-  assert.equal(result.counts.blockedRecords, 1);
-  assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.counts.blockedRecords, 0);
+  assert.equal(
+    result.records[0].notes,
+    "Primeira linha inventada de um comentário hipotético.\n" +
+      "Segunda linha inventada sem rótulo; sua fronteira não está homologada.",
+  );
 });
 
 test("18 recognizes CRLF websites separated by a blank line and EOF without newline", () => {
@@ -203,6 +207,58 @@ test("18 recognizes CRLF websites separated by a blank line and EOF without newl
   assert.equal(result.records[1].title, "Estação Boreal Fictícia");
   assert.equal(result.records[0].accountName, "");
   assert.equal(result.records[1].notes, "Comentário inteiramente inventado, teste.");
+});
+
+test("20 preserves multiline Comments across all three observed categories", () => {
+  const source = fixture("20-three-categories-multiline-observed-structure-crlf.txt");
+  const result = parseKasperskyTxtBytes(source);
+  const decodedSource = source.subarray(3).toString("utf8");
+
+  assert.deepEqual(Array.from(source.subarray(0, 3)), [0xef, 0xbb, 0xbf]);
+  assert.equal((decodedSource.match(/\r\r\n/gu) || []).length, 2);
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 4);
+  assert.equal(result.counts.websites, 2);
+  assert.equal(result.counts.applications, 1);
+  assert.equal(result.counts.otherAccounts, 1);
+  assert.equal(result.records[0].notes, "Linha web A1 fictícia\n---\nLinha web A3 fictícia");
+  assert.equal(
+    result.records[1].notes,
+    "Parágrafo web B1 fictício\n\n---\n\nParágrafo web B2 fictício",
+  );
+  assert.equal(result.records[2].notes, "Linha app 1 fictícia\n---\nLinha app 3 fictícia");
+  assert.deepEqual(
+    {
+      type: result.records[3].type,
+      title: result.records[3].title,
+      accountName: result.records[3].accountName,
+      username: result.records[3].username,
+      password: result.records[3].password,
+      url: result.records[3].url,
+      notes: result.records[3].notes,
+      group: result.records[3].group,
+    },
+    {
+      type: "other",
+      title: "Conta Genérica Multilinha Fictícia",
+      accountName: "",
+      username: "usuario-other-ficticio",
+      password: "FICTITIOUS-OTHER",
+      url: "",
+      notes: "Linha other 1 fictícia\n---\nLinha other 3 fictícia",
+      group: "Other Accounts",
+    },
+  );
+});
+
+test("21 blocks an unknown Other Accounts field before Comment", () => {
+  const result = parseFixture("21-other-accounts-invalid-field-negative-lf.txt");
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 0);
+  assert.equal(result.counts.blockedRecords, 1);
+  assert.equal(result.counts.otherAccounts, 0);
+  assert.ok(diagnosticCodes(result).includes("UNKNOWN_FIELD"));
 });
 
 test("accepts ArrayBuffer and respects Uint8Array view boundaries", () => {
@@ -294,7 +350,7 @@ test("rejects fields that start before a supported section", () => {
   assert.ok(diagnosticCodes(result).includes("NO_SUPPORTED_RECORDS"));
 });
 
-test("blocks unlabeled content without including it in diagnostics", () => {
+test("preserves unlabeled content after Comment without including it in diagnostics", () => {
   const secretContinuation = "DO-NOT-LEAK-CONTINUATION";
   const result = parseKasperskyTxtBytes(bytes([
     "Websites",
@@ -308,9 +364,81 @@ test("blocks unlabeled content without including it in diagnostics", () => {
     secretContinuation,
   ].join("\n")));
 
-  assert.equal(result.blocked, true);
-  assert.ok(diagnosticCodes(result).includes("AMBIGUOUS_MULTILINE"));
+  assert.equal(result.blocked, false);
+  assert.equal(result.records[0].notes, `First line\n${secretContinuation}`);
   assert.doesNotMatch(JSON.stringify(result.diagnostics), /DO-NOT-LEAK|FICTITIOUS-SECRET/u);
+});
+
+test("recognizes a complete next record after a multiline Comment without a delimiter", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "Website name: Primeiro Fictício",
+    "Website URL: https://first-direct.example.invalid",
+    "Login name:",
+    "Login: first-direct",
+    "Password: FICTITIOUS-FIRST-DIRECT",
+    "Comment: primeira linha fictícia",
+    "segunda linha fictícia",
+    "Website name: Segundo Fictício",
+    "Website URL: https://second-direct.example.invalid",
+    "Login name:",
+    "Login: second-direct",
+    "Password: FICTITIOUS-SECOND-DIRECT",
+    "Comment: final fictício",
+  ].join("\n")));
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.records[0].notes, "primeira linha fictícia\nsegunda linha fictícia");
+  assert.equal(result.records[1].title, "Segundo Fictício");
+});
+
+test("recognizes a complete next section after a multiline Comment without a delimiter", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "Website name: Portal Fictício",
+    "Website URL: https://section-direct.example.invalid",
+    "Login name:",
+    "Login: section-direct",
+    "Password: FICTITIOUS-SECTION-DIRECT",
+    "Comment: linha web fictícia",
+    "continuação web fictícia",
+    "Applications",
+    "Application: Aplicativo Fictício",
+    "Login name:",
+    "Login: app-direct",
+    "Password: FICTITIOUS-APP-DIRECT",
+    "Comment: linha app fictícia",
+  ].join("\n")));
+
+  assert.equal(result.blocked, false);
+  assert.equal(result.records.length, 2);
+  assert.equal(result.records[0].notes, "linha web fictícia\ncontinuação web fictícia");
+  assert.equal(result.records[1].type, "application");
+});
+
+test("does not absorb an incomplete decorated record into the previous Comment", () => {
+  const result = parseKasperskyTxtBytes(bytes([
+    "Websites",
+    "",
+    "Website name: Primeiro Completo",
+    "Website URL: https://first.example.invalid",
+    "Login name:",
+    "Login: first-user",
+    "Password: FICTITIOUS-FIRST",
+    "Comment: comentário fictício",
+    "",
+    "---",
+    "",
+    "Website name: Segundo Incompleto",
+    "Website URL: https://second.example.invalid",
+  ].join("\n")));
+
+  assert.equal(result.blocked, true);
+  assert.equal(result.records.length, 1);
+  assert.equal(result.records[0].title, "Primeiro Completo");
+  assert.equal(result.records[0].notes, "comentário fictício");
+  assert.ok(diagnosticCodes(result).includes("MISSING_FIELD"));
 });
 
 test("blocks an incomplete blank-delimited record without merging it into the next record", () => {
@@ -376,7 +504,7 @@ test("all fixture diagnostics use only safe structural coordinates", () => {
     .sort();
   const allowedKeys = new Set(["code", "severity", "section", "recordIndex", "field"]);
 
-  assert.equal(fixtureNames.length, 18);
+  assert.equal(fixtureNames.length, 21);
 
   for (const name of fixtureNames) {
     const result = parseFixture(name);

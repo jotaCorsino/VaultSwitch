@@ -1,0 +1,10 @@
+Other Accounts
+
+Account name: Conta Genérica Inválida Fictícia
+Login name:
+Login: usuario-other-invalido-ficticio
+Password: FICTITIOUS-OTHER-INVALID
+Invented field: FICTITIOUS-UNSUPPORTED
+Comment: Este registro inventado deve ser bloqueado.
+
+---
