@@ -1,136 +1,27 @@
-# VaultSwitch
+# Valt Switch
 
-O **VaultSwitch** é um utilitário local/offline para converter exportações de gerenciadores de senhas entre formatos compatíveis. O primeiro fluxo do projeto será a migração de dados do **Kaspersky Password Manager** para um **CSV importável pelo KeePassXC**, executando todo o processamento no navegador, sem backend e sem envio de credenciais para a internet.
+Conversor local de arquivos TXT exportados pelo **Kaspersky Password Manager** para CSV importável pelo **KeePassXC**. Um único arquivo HTML, sem instalação, conta, servidor ou internet.
 
-## Acompanhamento do desenvolvimento
+## Baixar versão beta
 
-**Fase atual:** UI-001 — 🔵 Em validação / aguardando homologação
+Acesse **[GitHub Releases](https://github.com/jotaCorsino/VaultSwitch/releases)** e baixe o ZIP `Valt-Switch-v0.1.0-beta.1.zip`. Extraia e abra `Valt-Switch.html` com dois cliques no Chrome ou Edge.
 
-| Ordem | ID | Etapa | Status |
-| --- | --- | --- | --- |
-| 0 | INIT-001 | Fundação documental | 🟢 Concluído (homologado) |
-| 1 | BOOT-001 | Bootstrap local | 🟢 Concluído (homologado) |
-| 2 | FMT-001 | Contrato do formato Kaspersky / fixtures sanitizadas | 🟢 Concluído (homologado) |
-| 3 | PARSE-001 | Parser local do TXT do Kaspersky | 🟢 Concluído (homologado V0) |
-| 4 | CSV-001 | Geração de CSV compatível com KeePassXC | 🟢 Concluído (homologado V0 experimental) |
-| 5 | UI-001 | Interface moderna e fluxo de conversão | 🔵 Em validação / aguardando homologação |
-| 6 | QA-001 | Validação ponta a ponta no KeePassXC | ⚪ Planejado |
-| 7 | REL-001 | Empacotamento e documentação de uso | ⚪ Planejado |
+Você também pode baixar diretamente [o HTML](VaultSwitch.html) usando **Download raw file** no GitHub.
 
-**Legenda:** ⚪ Planejado · 🟡 Em implementação · 🔵 Em validação / aguardando homologação · 🟢 Concluído (homologado) · 🟠 Pausado.
+## Como usar
 
-**Gate atual:** a [UI-001](docs/tarefas/UI-001.md) está implementada no [Draft PR #11](https://github.com/jotaCorsino/VaultSwitch/pull/11) e aguarda revisão técnica, UX, segurança e homologação humana. QA-001 **não** foi iniciada.
+1. Selecione ou arraste o TXT exportado pelo Kaspersky.
+2. Clique em **Converter para CSV**. O navegador baixa `Valt-Switch-convertido.csv`.
+3. Abra KeePassXC, escolha importar CSV e confira a correspondência das colunas `Group,Title,Username,Password,URL,Notes`.
 
-**Gate de uso real:** [Issue #6 — `Comment` multilinha](https://github.com/jotaCorsino/VaultSwitch/issues/6) continua aberta e **bloqueia a declaração de segurança para migração real**, mesmo com PARSE-001 homologada. `Login name` não vazio também não pode ser perdido na importação.
+O campo adicional **Login name** do Kaspersky, quando preenchido, é preservado com identificação em `Notes`.
 
-**Detalhamento:** [ROADMAP.md](ROADMAP.md) · [Interface](index.html) · [Lógica da UI](assets/js/app.js) · [Testes UI-001](tests/ui.test.js) · [Evidências UI-001](docs/evidencias/UI-001.md) · [Tarefa UI-001](docs/tarefas/UI-001.md) · [Serializador CSV](assets/js/keepassxc-csv.js) · [Parser](assets/js/kaspersky-parser.js) · [Contrato homologado](docs/06-CONTRATO-TXT-KASPERSKY.md)
+**Suporte beta:** `Websites`, `Applications` e `Other Accounts`, TXT UTF-8 com campos ingleses, comentários multiline. Limite de entrada: **50 MiB**; saída: **100 MiB**.
 
-## Problema / contexto
+## Atenção: fase de testes
 
-O Kaspersky Password Manager exporta credenciais e notas para um arquivo TXT em formato legível, enquanto o KeePassXC oferece importação por CSV com mapeamento de colunas. Fazer a migração manualmente é trabalhoso e aumenta o risco de perda, alteração ou exposição de credenciais.
+A importação completa no KeePassXC ainda não foi homologada e comentários que imitem a estrutura de outros registros podem ser ambíguos. **Use preferencialmente dados fictícios e cofres descartáveis até a validação final.** TXT e CSV contêm senhas em texto claro.
 
-## Objetivo
+Para relatar erros, [abra uma Issue](https://github.com/jotaCorsino/VaultSwitch/issues). Nunca anexe exportações reais, arquivos de senhas nem screenshots que revelem credenciais.
 
-Criar uma ferramenta simples, auditável e portátil que:
-
-- leia localmente o TXT exportado pelo Kaspersky Password Manager;
-- reconheça e normalize os registros suportados;
-- apresente uma validação segura da conversão sem revelar senhas por padrão;
-- gere um CSV adequado à importação pelo KeePassXC;
-- funcione offline em navegador moderno no Linux Mint;
-- não dependa de servidor, banco de dados, API, framework, CDN ou serviço externo.
-
-## Escopo inicial
-
-### Incluído
-
-- Kaspersky Password Manager TXT como formato de origem;
-- websites e aplicações com título/nome, login, senha, URL quando aplicável e comentário/notas;
-- geração de CSV para importação no KeePassXC;
-- interface em HTML, CSS e JavaScript puro;
-- execução local/offline;
-- validações de estrutura e contagem de registros;
-- tratamento seguro de dados sensíveis durante a sessão.
-
-### Fora do escopo inicial
-
-- criação direta de arquivos KDBX;
-- sincronização com nuvem;
-- backend ou conta de usuário;
-- armazenamento persistente de credenciais;
-- envio de telemetria;
-- outros gerenciadores de senhas antes da homologação do primeiro fluxo;
-- processamento de documentos/arquivos anexos do cofre.
-
-## Solução
-
-Fluxo previsto:
-
-```text
-Arquivo TXT do Kaspersky
-        ↓
-Leitura local no navegador
-        ↓
-Detecção / validação do formato
-        ↓
-Parser e normalização em memória
-        ↓
-Resumo seguro da conversão
-        ↓
-Serialização CSV
-        ↓
-Download local
-        ↓
-Importação pelo KeePassXC
-```
-
-## Arquitetura / tecnologias
-
-- HTML5;
-- CSS3;
-- JavaScript puro (Vanilla JS);
-- APIs nativas do navegador: File API / FileReader ou ArrayBuffer, TextDecoder, Blob e URL.createObjectURL;
-- sem dependências de runtime;
-- sem chamadas de rede necessárias ao funcionamento.
-
-Detalhes: [docs/02-ARQUITETURA.md](docs/02-ARQUITETURA.md)
-
-## Segurança e restrições
-
-O projeto manipula senhas em texto claro durante a conversão e, por isso, é tratado como software de alta sensibilidade de dados.
-
-Regras iniciais:
-
-- nenhum dado do arquivo deve ser enviado para rede;
-- nenhum conteúdo sensível deve ir para GitHub, logs, analytics, LocalStorage, SessionStorage ou IndexedDB;
-- senhas não devem aparecer na interface por padrão;
-- arquivos reais de exportação nunca devem ser versionados;
-- testes no repositório devem usar somente dados fictícios/sanitizados;
-- o CSV gerado também é texto claro e deve ser tratado como temporário;
-- a aplicação deve funcionar sem CDN, fontes remotas ou bibliotecas externas.
-
-Detalhes: [docs/03-SEGURANCA-E-PRIVACIDADE.md](docs/03-SEGURANCA-E-PRIVACIDADE.md)
-
-## Documentação
-
-- [Roadmap](ROADMAP.md)
-- [Produto e escopo](docs/01-PRODUTO-E-ESCOPO.md)
-- [Arquitetura](docs/02-ARQUITETURA.md)
-- [Segurança e privacidade](docs/03-SEGURANCA-E-PRIVACIDADE.md)
-- [Formatos e compatibilidade](docs/04-FORMATOS-E-COMPATIBILIDADE.md)
-- [Critérios de homologação](docs/05-HOMOLOGACAO.md)
-- [Contrato proposto do TXT do Kaspersky](docs/06-CONTRATO-TXT-KASPERSKY.md)
-- [Evidências da FMT-001](docs/evidencias/FMT-001.md)
-- [Tarefa UI-001 — interface e relatório seguro](docs/tarefas/UI-001.md)
-- [Evidências UI-001](docs/evidencias/UI-001.md)
-- [Evidências CSV-001](docs/evidencias/CSV-001.md)
-
-## Método ÓRBITA
-
-Este projeto utiliza o **Método ÓRBITA — Desenvolvimento de Software Assistido por IA com Governança Humana**.
-
-Princípio operacional:
-
-**Planejar → Executar → Evidenciar → Homologar**
-
-A implementação funcional só começa após a fundação documental e o bootstrap local serem validados.
+[Guia dos testes](GUIA-TESTES-BETA.md) · [Notas da beta](RELEASE-NOTES-v0.1.0-beta.1.md) · [Documentação técnica](docs/)
