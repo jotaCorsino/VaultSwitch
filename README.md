@@ -4,7 +4,7 @@ Conversor local de arquivos TXT exportados pelo **Kaspersky Password Manager** p
 
 ## Baixar versão beta
 
-Acesse **[GitHub Releases](https://github.com/jotaCorsino/VaultSwitch/releases)** e baixe o ZIP `Valt-Switch-v0.1.0-beta.1.zip`. Extraia e abra `Valt-Switch.html` com dois cliques no Chrome ou Edge.
+Acesse **[GitHub Releases](https://github.com/jotaCorsino/VaultSwitch/releases)** e baixe o ZIP `Valt-Switch-v0.1.0-beta.2.zip`. Extraia e abra `Valt-Switch.html` com dois cliques no Chrome ou Edge.
 
 Você também pode baixar diretamente [o HTML](VaultSwitch.html) usando **Download raw file** no GitHub.
 
@@ -16,6 +16,8 @@ Você também pode baixar diretamente [o HTML](VaultSwitch.html) usando **Downlo
 
 O campo adicional **Login name** do Kaspersky, quando preenchido, é preservado com identificação em `Notes`.
 
+**Atualização beta.2:** arquivos que começam diretamente por campos conhecidos, sem cabeçalho de categoria, agora são reconhecidos quando os campos esperados estão completos e ordenados.
+
 **Suporte beta:** `Websites`, `Applications` e `Other Accounts`, TXT UTF-8 com campos ingleses, comentários multiline. Limite de entrada: **50 MiB**; saída: **100 MiB**.
 
 ## Atenção: fase de testes
@@ -24,4 +26,4 @@ A importação completa no KeePassXC ainda não foi homologada e comentários qu
 
 Para relatar erros, [abra uma Issue](https://github.com/jotaCorsino/VaultSwitch/issues). Nunca anexe exportações reais, arquivos de senhas nem screenshots que revelem credenciais.
 
-[Guia dos testes](GUIA-TESTES-BETA.md) · [Notas da beta](RELEASE-NOTES-v0.1.0-beta.1.md) · [Documentação técnica](docs/)
+[Guia dos testes](GUIA-TESTES-BETA.md) · [Notas da beta](RELEASE-NOTES-v0.1.0-beta.2.md) · [Documentação técnica](docs/)

@@ -666,16 +666,26 @@
       }
 
       if (!definition) {
-        if (
-          startsUnknownBlock(lines, lookahead, lineIndex) ||
-          hasRecognizedSectionAhead(lookahead, lineIndex + 1)
-        ) {
-          enterUnknownSection();
-        } else if (line.includes(":") && !reportedInvalidSectionStart) {
-          addDiagnostic(state, "INVALID_SECTION", "error");
-          reportedInvalidSectionStart = true;
+        // Um TXT pode comecar diretamente no primeiro campo, sem "Websites".
+        // Inferir a categoria SOMENTE pela sequencia completa e ordenada
+        // dos campos conhecidos, nunca por um unico nome isolado.
+        const inferredSection = RECOGNIZED_SECTION_NAMES.find((name) =>
+          looksLikeCompleteRecordStart(lines, lineIndex, SECTION_DEFINITIONS[name]),
+        );
+        if (inferredSection) {
+          enterRecognizedSection(inferredSection);
+        } else {
+          if (
+            startsUnknownBlock(lines, lookahead, lineIndex) ||
+            hasRecognizedSectionAhead(lookahead, lineIndex + 1)
+          ) {
+            enterUnknownSection();
+          } else if (line.includes(":") && !reportedInvalidSectionStart) {
+            addDiagnostic(state, "INVALID_SECTION", "error");
+            reportedInvalidSectionStart = true;
+          }
+          continue;
         }
-        continue;
       }
 
       if (!record && startsUnknownBlock(lines, lookahead, lineIndex)) {
